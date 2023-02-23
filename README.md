@@ -96,10 +96,7 @@ Let's train our model on the offline (known) data.
 clf = ECSMinerWF(K=5, min_examples_cluster=5, verbose=1, random_state=42, ensemble_size=20)
 clf.learn_many(np.array(X_train), np.array(y_train))
 ```
-The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
-print(conf_matrix)
-```
-Once again, let's test our model in an online fashion.
+Once again, let's use our model in an online fashion.
 ```python
 conf_matrix = metrics.ConfusionMatrix()
 
@@ -111,6 +108,10 @@ for x, y_true in zip(X_test, y_test):
         conf_matrix = conf_matrix.update(y_true, y_pred[0])
 ```
 
+The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
+```python
+print(conf_matrix)
+```
 
 
 |        | **-1** | **0** | **1** | **2** | **3** | **4** | **5** | **6** |
