@@ -12,11 +12,11 @@ REQUIRES_PYTHON = ">=3.6.0"
 
 # Requirements
 base_packages = [
-    "scikit-learn~=1.2.1",
-    "pandas~=1.4.2",
-    "numpy~=1.23.5",
-    "river~=0.15.0",
-    "clusopt-core~=1.0.0"
+    "scikit-learn>=1.2.1",
+    "pandas>=1.4.2",
+    "numpy>=1.23.5",
+    "river>=0.15.0",
+    "clusopt-core>=1.0.0"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

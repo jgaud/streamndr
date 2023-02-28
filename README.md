@@ -1,5 +1,12 @@
 <p align="center">
-    <img alt="GitHub" src="https://img.shields.io/github/license/jgaud/streamndr">
+<!-- PyPI -->
+  <a href="https://pypi.org/project/streamndr/">
+    <img src="https://img.shields.io/pypi/v/streamndr.svg?label=release&color=blue&style=flat-square" alt="pypi">
+  </a>
+  <!-- License -->
+  <a href="https://opensource.org/licenses/BSD-3-Clause">
+    <img src="https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat-square" alt="bsd_3_license">
+  </a>
 </p>
 <p align="center">
     Stream Novelty Detection for River (StreamNDR) is a Python library for online novelty detection.
@@ -56,6 +63,7 @@ y_train = np.array(y_train)
 ### MINAS
 Let's train our MINAS model on the offline (known) data.
 ```python
+from streamndr.model import Minas
 clf = Minas(kini=10, cluster_algorithm='kmeans', 
             window_size=100, threshold_strategy=1, threshold_factor=1.1, 
             min_short_mem_trigger=100, min_examples_cluster=3, verbose=1, random_state=42)
@@ -93,6 +101,7 @@ print(conf_matrix)
 Let's train our model on the offline (known) data.
 
 ```python
+from streamndr.model import ECSMinerWF
 clf = ECSMinerWF(K=5, min_examples_cluster=5, verbose=1, random_state=42, ensemble_size=20)
 clf.learn_many(np.array(X_train), np.array(y_train))
 ```
@@ -126,8 +135,16 @@ print(conf_matrix)
 | **6**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
 
 ## 🛠 Installation
+**Note**: StreamNDR is intended to be used with Python 3.6 or above and requires the package [ClusOpt-Core](https://pypi.org/project/clusopt-core/) which requires a C/C++ compiler (such as gcc) and the [Boost.Thread library](https://robots.uc3m.es/installation-guides/install-boost.html) to build. To install the Boost.Thread library on Debian systems, the following command can be used:
 
-To Do.
+```console
+sudo apt install libboost-thread-dev
+```
+
+The package can be installed simply with `pip` :
+```console
+pip install streamndr
+```
 
 ## Special Thanks
 Special thanks goes to Vítor Bernardes, from which some of the code for MINAS is based on their [implementation](https://github.com/vbernardes/minas).

@@ -1,3 +1,5 @@
+import numpy as np
+
 class MicroCluster(object):
 
     def __init__(self,
