@@ -1,0 +1,2 @@
+#MINAS
+::: streamndr.model.minas

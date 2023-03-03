@@ -11,6 +11,45 @@ from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
 
 
 class Minas(base.MiniBatchClassifier):
+    """Implementation of the MINAS algorithm for novelty detection.
+
+    Parameters
+    ----------
+    kini : int
+        Number of K clusters for the clustering (KMeans or Clustream) algorithm
+    cluster_algorithm : str
+        String containing the clustering algorithm to use, supports 'kmeans' and 'clustream'
+    random_state : int
+        Seed for the random number generation. Makes the algorithm deterministic if a number is provided.
+    min_short_mem_trigger : int
+        Minimum number of samples in the short term memory to trigger the novelty detection process
+    min_examples_cluster : int
+        Minimum number of samples to from a cluster
+    threshold_strategy : int
+        Strategy to use to compute the threshold. Can be '1', '2', or '3' as described in the MINAS paper.
+    threshold_factor : float
+        Factor for the threshold computation
+    window_size : int
+        Number of samples used by the forgetting mechanism
+    update_summary : bool
+        Whether or not the microcluster's properties are updated when a new point is added to it
+    verbose : int
+        Controls the level of verbosity, the higher, the more messages are displayed. Can be '1', '2', or '3'.
+
+    Attributes
+    ----------
+    MAX_MEMORY_SIZE : int
+        Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
+    before_offline_phase : bool
+        Whether or not the algorithm was initialized (offline phase). The algorithm needs to first be initialized to be used in an online fashion.
+    short_mem : list of ShortMemInstance
+        Buffer memory containing the samples labeled as unknown temporarily for the novelty detection process
+    sleep_mem : list of MicroCluster
+        Microclusters that have not have any new points added from the strem for a period of time are temporarily moved to a sleep memory
+    sample_counter : int
+        Number of samples treated, used by the forgetting mechanism
+    """
+
     
     MAX_MEMORY_SIZE = 50000
 
@@ -50,13 +89,39 @@ class Minas(base.MiniBatchClassifier):
         self.sample_counter = 0  # to be used with window_size
     
     def learn_one(self, x, y, w=1.0):
-        """X is a Dictionary"""
+        """Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
+        to arrive at once. It is only added as to follow River's API.
+
+        Parameters
+        ----------
+        x : dict
+            Sample
+        y : int
+            Label of the given sample
+        w : float, optional
+            Weight, not used, by default 1.0
+        """
         # Not applicable
         pass
         
 
     def learn_many(self, X, y, w=1.0):
-        """X is a pandas DataFrame or Numpy Array"""
+        """Represents the offline phase of the algorithm. Receives a number of samples and their given labels and learns all of the known classes.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame or numpy.ndarray
+            Samples to be learned by the model
+        y : list of int
+            Labels corresponding to the given samples, must be the same length as the number of samples
+        w : float, optional
+            Weights, not used, by default 1.0
+
+        Returns
+        -------
+        Minas
+            Itself
+        """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
             
@@ -66,11 +131,41 @@ class Minas(base.MiniBatchClassifier):
         return self
     
     def predict_one(self, X):
-        """X is a Dictionary""" 
+        """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label and adds 
+        it to the cluster if it is a known class. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
+        performed once the trigger has been reached (min_short_mem_trigger).
+
+        Parameters
+        ----------
+        X : dict
+            Sample
+
+        Returns
+        -------
+        numpy.ndarray
+            Label predicted for the given sample, predicts -1 if labeled as unknown
+        """
         return self.predict_many(np.array(list(X.values()))[None,:])
 
     def predict_many(self, X):
-        """X is a pandas DataFrame or Numpy Array"""
+        """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
+        Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_short_mem_trigger).
+
+        Parameters
+        ----------
+        X : pandas.DataFrame or numpy.ndarray
+            Samples
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of length len(X) containing the predicted labels, predicts -1 if the corresponding sample labeled as unknown
+
+        Raises
+        ------
+        Exception
+            If the model has not been trained first with learn_many() (offline phase)
+        """
         if self.before_offline_phase:
             raise Exception("Model must be fitted first")
         
@@ -89,7 +184,7 @@ class Minas(base.MiniBatchClassifier):
             if closest_cluster.encompasses(X[i]):  # classify in this cluster
                 pred_label.append(closest_cluster.label)
 
-                closest_cluster.update_cluster(X[i], closest_cluster.label, self.sample_counter, self.update_summary)
+                closest_cluster.update_cluster(X[i], self.sample_counter, self.update_summary)
 
             else:  # classify as unknown
                 pred_label.append(-1)
@@ -111,15 +206,65 @@ class Minas(base.MiniBatchClassifier):
         return np.array(pred_label)
 
     def predict_proba_one(self,X):
+        """Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
+        It is only added as to follow River's API.
+
+        Parameters
+        ----------
+        X : dict
+            Sample
+        """
         # Not applicable
         pass
     
     def predict_proba_many(self, X):
+        """Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
+        It is only added as to follow River's API.
+
+        Parameters
+        ----------
+        X : Pandas.DataFrame or numpy.ndarray
+            Samples
+        """
         # Not applicable
         pass
 
-    def _offline(self, X_train, y_train):
+    def confusion_matrix(self, X_test, y_test):
+        """Creates a confusion matrix.
 
+        It must be run on a fitted classifier that has already seen the examples in the test set.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            The set of data samples to predict the class labels for.
+        y_test : numpy.ndarray
+            The set of class labels for the data samples.
+
+        Returns
+        -------
+        river.metrics.ConfusionMatrix
+
+        """
+        if isinstance(X_test, pd.DataFrame):
+            X_test = X_test.to_numpy()
+
+        closest_clusters = self._get_closest_clusters(X_test, [microcluster.centroid for microcluster in self.microclusters])
+
+        conf_matrix = metrics.ConfusionMatrix()
+        
+        for i in range(len(closest_clusters)):
+            closest_cluster = self.microclusters[closest_clusters[i]]
+
+            if closest_cluster.encompasses(X_test[i]):  # classify in this cluster
+                conf_matrix = conf_matrix.update(y_test[i], closest_cluster.label)
+
+            else:  # classify as unknown
+                conf_matrix = conf_matrix.update(y_test[i], -1)
+
+        return conf_matrix
+
+    def _offline(self, X_train, y_train):
         microclusters = []
         # in offline phase, consider all instances arriving at the same time in the microclusters:
         timestamp = len(X_train)
@@ -286,38 +431,3 @@ class Minas(base.MiniBatchClassifier):
         for instance in self.short_mem:
             if instance.timestamp < self.sample_counter - self.window_size:
                 self.short_mem.remove(instance)
-
-    def confusion_matrix(self, X_test, y_test):
-        """Creates a confusion matrix.
-
-        It must be run on a fitted classifier that has already seen the examples in the test set.
-
-        Parameters
-        ----------
-        X_test : numpy.ndarray
-            The set of data samples to predict the class labels for.
-        y_test : numpy.ndarray
-            The set of class labels for the data samples.
-
-        Returns
-        -------
-        river.metrics.ConfusionMatrix
-
-        """
-        if isinstance(X_test, pd.DataFrame):
-            X_test = X_test.to_numpy()
-
-        closest_clusters = self._get_closest_clusters(X_test, [microcluster.centroid for microcluster in self.microclusters])
-
-        conf_matrix = metrics.ConfusionMatrix()
-        
-        for i in range(len(closest_clusters)):
-            closest_cluster = self.microclusters[closest_clusters[i]]
-
-            if closest_cluster.encompasses(X_test[i]):  # classify in this cluster
-                conf_matrix = conf_matrix.update(y_test[i], closest_cluster.label)
-
-            else:  # classify as unknown
-                conf_matrix = conf_matrix.update(y_test[i], -1)
-
-        return conf_matrix

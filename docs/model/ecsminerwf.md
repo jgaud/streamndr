@@ -1,0 +1,2 @@
+#ECSMinerWF
+::: streamndr.model.ecsminerwf

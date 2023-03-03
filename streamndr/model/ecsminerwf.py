@@ -11,6 +11,38 @@ from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
 
 
 class ECSMinerWF(base.MiniBatchClassifier):
+    """Implementation of the ECSMinerWF (ECSMiner without feedback) algorithm for novelty detection.
+
+    Parameters
+    ----------
+    K : int
+        Number of pseudopoints per classifier. In other words, it is the number of K cluster for the clustering algorithm.
+    min_examples_cluster : int
+        Minimum number of examples to declare a novel class 
+    ensemble_size : int
+        Number of classifiers to use to create the ensemble
+    verbose : int
+        Controls the level of verbosity, the higher, the more messages are displayed. Can be '1', '2', or '3'.
+    random_state : int
+        Seed for the random number generation. Makes the algorithm deterministic if a number is provided.
+
+    Attributes
+    ----------
+    MAX_MEMORY_SIZE : int
+        Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
+    models : list of list of MicroCluster
+        List containing the models created in the offline phase. In other words, it contains multiple lists of MicroClusters.
+    novel_models : list of MicroCluster
+        Contains the clusters representing novel classes, added during the online phase
+    sample_counter : int
+        Number of samples treated, used by the forgetting mechanism
+    short_mem : list of ShortMemInstance
+        Buffer memory containing the samples labeled as unknown temporarily for the novelty detection process
+    last_nd : int
+        Timestamp when the last novelty detection was performed. Used to determine if a new novelty detection should be performed.
+    before_offline_phase : bool
+        Whether or not the algorithm was initialized (offline phase). The algorithm needs to first be initialized to be used in an online fashion.
+    """
 
     MAX_MEMORY_SIZE = 50000
     
@@ -36,13 +68,39 @@ class ECSMinerWF(base.MiniBatchClassifier):
         self.before_offline_phase = True
         
     def learn_one(self, x, y, w=1.0):
-        """X is a Dictionary"""
+        """Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
+        to arrive at once. It is only added as to follow River's API.
+
+        Parameters
+        ----------
+        x : dict
+            Sample
+        y : int
+            Label of the given sample
+        w : float, optional
+            Weight, not used, by default 1.0
+        """
         # Not applicable
         pass
         
 
     def learn_many(self, X, y, w=1.0):
-        """X is a pandas DataFrame or Numpy Array"""
+        """Represents the offline phase of the algorithm. Receives a number of samples and their given labels and learns all of the known classes.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame or numpy.ndarray
+            Samples to be learned by the model
+        y : list of int
+            Labels corresponding to the given samples, must be the same length as the number of samples
+        w : float, optional
+            Weights, not used, by default 1.0
+
+        Returns
+        -------
+        ECSMinerWF
+            Itself
+        """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
             
@@ -63,12 +121,42 @@ class ECSMinerWF(base.MiniBatchClassifier):
         return self
     
     def predict_one(self, X):
-        """X is a Dictionary"""
+        """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label and adds 
+        it to the cluster if it is a known class. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
+        performed once the trigger has been reached (min_examples_cluster).
+
+        Parameters
+        ----------
+        X : dict
+            Sample
+
+        Returns
+        -------
+        numpy.ndarray
+            Label predicted for the given sample, predicts -1 if labeled as unknown
+        """
         return self.predict_many(np.array(list(X.values()))[None,:])
             
 
     def predict_many(self, X):
-        """X is a pandas DataFrame or Numpy Array"""
+        """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
+        Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_examples_cluster).
+
+        Parameters
+        ----------
+        X : pandas.DataFrame or numpy.ndarray
+            Samples
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of length len(X) containing the predicted labels, predicts -1 if the corresponding sample labeled as unknown
+
+        Raises
+        ------
+        Exception
+            If the model has not been trained first with learn_many() (offline phase)
+        """
         if self.before_offline_phase:
             raise Exception("Model must be fitted first")
         
@@ -90,11 +178,11 @@ class ECSMinerWF(base.MiniBatchClassifier):
             
             if closest_cluster.distance_to_centroid(X[i]) <= closest_cluster.max_distance: # classify with the label from majority voting
                 pred_label.append(y_preds[i])
-                closest_cluster.update_cluster(X[i], closest_cluster.label, self.sample_counter, False)
+                closest_cluster.update_cluster(X[i], self.sample_counter, False)
                 
             elif (len(self.novel_models) > 0) and (self.novel_models[novel_closest_clusters[i]].distance_to_centroid(X[i]) <= closest_cluster.max_distance): #One of our novel cluster can explain our sample
                 pred_label.append(self.novel_models[novel_closest_clusters[i]].label)
-                self.novel_models[novel_closest_clusters[i]].update_cluster(X[i], self.novel_models[novel_closest_clusters[i]].label, self.sample_counter, False)
+                self.novel_models[novel_closest_clusters[i]].update_cluster(X[i], self.sample_counter, False)
                 
             else: #Classify as unknown
                 pred_label.append(-1)
@@ -142,7 +230,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
         river.metrics.ConfusionMatrix
 
         """
-        
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()
         
@@ -261,7 +348,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
         
         
     def _qnsc(self, pseudopoints, model):
-        
         #Calculate mean distance of all points between themselves
         dists = np.linalg.norm(pseudopoints - pseudopoints[:,None], axis=-1)
         dists[np.arange(dists.shape[0]), np.arange(dists.shape[0])] = np.nan

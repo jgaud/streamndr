@@ -1,0 +1,24 @@
+site_name: StreamNDR Docs
+
+dev_addr: 192.168.1.169:8000
+
+theme:
+  name: material
+
+nav:
+  - index.md
+  - getting_started.md
+  #- examples.md
+  - 'API Reference':
+    - 'Model':
+      - model/minas.md
+      - model/ecsminerwf.md
+    - 'Utils':
+      - utils/data_structure.md
+
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          docstring_style: numpy

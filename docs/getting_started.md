@@ -1,30 +1,4 @@
-<p align="center">
-<!-- Documentation -->
-  <a href="https://jgaud.github.io/streamndr/">
-    <img src="https://img.shields.io/website?label=docs&style=flat-square&url=https%3A%2F%2Fjgaud.github.io%2Fstreamndr%2F" alt="documentation">
-  </a>
-<!-- PyPI -->
-  <a href="https://pypi.org/project/streamndr/">
-    <img src="https://img.shields.io/pypi/v/streamndr.svg?label=release&color=blue&style=flat-square" alt="pypi">
-  </a>
-  <!-- License -->
-  <a href="https://opensource.org/licenses/BSD-3-Clause">
-    <img src="https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat-square" alt="bsd_3_license">
-  </a>
-  <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/streamndr">
-</p>
-<p align="center">
-    Stream Novelty Detection for River (StreamNDR) is a Python library for online novelty detection.
-    StreamNDR aims to enable <a href="https://deepai.org/machine-learning-glossary-and-terms/novelty-detection">novelty detection</a> in data streams for Python.
-    It is based on the <a href="https://www.riverml.xyz">river</a> API and is currently in early stage of development. Contributors are welcome.
-</p>
-
-## 📚 [Documentation](https://jgaud.github.io/streamndr/)
-StreamNDR implements in Python various algorithms for novelty detection that have been proposed in the literature. It follows <a href="https://www.riverml.xyz">river</a> implementation and format. At this stage, the following algorithms are implemented:
-- MINAS [[1]](#1)
-- ECSMiner-WF (Version of ECSMiner [[2]](#2) without feedback, as proposed in [[1]](#1))
-
-Full documentation is available [here](https://jgaud.github.io/streamndr/).
+# Getting Started
 
 ## 🛠 Installation
 **Note**: StreamNDR is intended to be used with Python 3.6 or above and requires the package [ClusOpt-Core](https://pypi.org/project/clusopt-core/) which requires a C/C++ compiler (such as gcc) and the [Boost.Thread library](https://robots.uc3m.es/installation-guides/install-boost.html) to build. To install the Boost.Thread library on Debian systems, the following command can be used:
@@ -150,19 +124,3 @@ print(conf_matrix)
 | **4**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
 | **5**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
 | **6**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
-
-## Special Thanks
-Special thanks goes to Vítor Bernardes, from which some of the code for MINAS is based on their [implementation](https://github.com/vbernardes/minas).
-
-## 💬 References
-<a id="1">[1]</a> 
-de Faria, E.R., Ponce de Leon Ferreira Carvalho, A.C. & Gama, J. MINAS: multiclass learning algorithm for novelty detection in data streams. Data Min Knowl Disc 30, 640–680 (2016). https://doi.org/10.1007/s10618-015-0433-y
-
-<a id="2">[2]</a>
-M. Masud, J. Gao, L. Khan, J. Han and B. M. Thuraisingham, "Classification and Novel Class Detection in Concept-Drifting Data Streams under Time Constraints," in IEEE Transactions on Knowledge and Data Engineering, vol. 23, no. 6, pp. 859-874, June 2011, doi: 10.1109/TKDE.2010.61.
-
-## 🏫 Affiliations
-
-<p align="center">
-    <img src="http://www.uottawa.ca/brand/sites/www.uottawa.ca.brand/files/uottawa_hor_wg9.png" alt="FZI Logo" height="200"/>
-</p>
