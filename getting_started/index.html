@@ -1,0 +1,756 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../model/minas/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.15">
+    
+    
+      
+        <title>Getting Started - StreamNDR Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.113286f1.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="StreamNDR Docs" class="md-header__button md-logo" aria-label="StreamNDR Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            StreamNDR Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="StreamNDR Docs" class="md-nav__button md-logo" aria-label="StreamNDR Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    StreamNDR Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        StreamNDR
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Getting Started
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    🛠 Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    ⚡️ Quickstart
+  </a>
+  
+    <nav class="md-nav" aria-label="⚡️ Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minas" class="md-nav__link">
+    MINAS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ecsminer-wf" class="md-nav__link">
+    ECSMiner-WF
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          API Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          Model
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_1">
+          <span class="md-nav__icon md-icon"></span>
+          Model
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/minas/" class="md-nav__link">
+        Minas
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/ecsminerwf/" class="md-nav__link">
+        Ecsminerwf
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+          Utils
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_2">
+          <span class="md-nav__icon md-icon"></span>
+          Utils
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/data_structure/" class="md-nav__link">
+        Data structure
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    🛠 Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    ⚡️ Quickstart
+  </a>
+  
+    <nav class="md-nav" aria-label="⚡️ Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minas" class="md-nav__link">
+    MINAS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ecsminer-wf" class="md-nav__link">
+    ECSMiner-WF
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="getting-started">Getting Started</h1>
+<h2 id="installation">🛠 Installation</h2>
+<p><strong>Note</strong>: StreamNDR is intended to be used with Python 3.6 or above and requires the package <a href="https://pypi.org/project/clusopt-core/">ClusOpt-Core</a> which requires a C/C++ compiler (such as gcc) and the <a href="https://robots.uc3m.es/installation-guides/install-boost.html">Boost.Thread library</a> to build. To install the Boost.Thread library on Debian systems, the following command can be used:</p>
+<pre><code class="language-console">sudo apt install libboost-thread-dev
+</code></pre>
+<p>The package can be installed simply with <code>pip</code> :</p>
+<pre><code class="language-console">pip install streamndr
+</code></pre>
+<h2 id="quickstart">⚡️ Quickstart</h2>
+<p>As a quick example, we'll train two models (MINAS and ECSMiner-WF) to classify a synthetic dataset created using <a href="https://riverml.xyz/dev/api/datasets/synth/RandomRBF/">RandomRBF</a>. The models are trained on only two of the four generated classes ([0,1]) and will try to detect the other classes ([2,3]) as novelty patterns in the dataset in an online fashion.</p>
+<p>Let's first generate the dataset.</p>
+<pre><code class="language-python">import numpy as np
+from river.datasets import synth
+
+ds = synth.RandomRBF(seed_model=42, seed_sample=42, n_classes=4, n_features=5, n_centroids=10)
+
+offline_size = 1000
+online_size = 5000
+X_train = []
+y_train = []
+X_test = []
+y_test = []
+
+for x,y in ds.take(10*(offline_size+online_size)):
+
+    #Create our training data (known classes)
+    if len(y_train) &lt; offline_size:
+        if y == 0 or y == 1: #Only showing two first classes in the training set
+            X_train.append(np.array(list(x.values())))
+            y_train.append(y)
+
+    #Create our online stream of data
+    elif len(y_test) &lt; online_size:
+        X_test.append(x)
+        y_test.append(y)
+
+    else:
+        break
+
+X_train = np.array(X_train)
+y_train = np.array(y_train)
+</code></pre>
+<h3 id="minas">MINAS</h3>
+<p>Let's train our MINAS model on the offline (known) data.</p>
+<pre><code class="language-python">from streamndr.model import Minas
+clf = Minas(kini=10, cluster_algorithm='kmeans', 
+            window_size=100, threshold_strategy=1, threshold_factor=1.1, 
+            min_short_mem_trigger=100, min_examples_cluster=3, verbose=1, random_state=42)
+
+clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
+</code></pre>
+<p>Let's now test our algorithm in an online fashion, note that our unsupervised clusters are automatically updated with the call to <code>predict_one</code>.</p>
+<pre><code class="language-python">from river import metrics
+
+conf_matrix = metrics.ConfusionMatrix()
+
+for x, y_true in zip(X_test, y_test):
+
+    y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
+
+    if y_pred is not None:
+        conf_matrix = conf_matrix.update(y_true, y_pred[0])
+</code></pre>
+<p>Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. Of course, the hyperparameters of the model can be tuned a lot more to get better results.</p>
+<pre><code class="language-python">print(conf_matrix)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>-1</strong></th>
+<th><strong>0</strong></th>
+<th><strong>1</strong></th>
+<th><strong>2</strong></th>
+<th><strong>3</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>-1</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>0</strong></td>
+<td>819</td>
+<td>286</td>
+<td>17</td>
+<td>6</td>
+<td>22</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>1260</td>
+<td>3</td>
+<td>1182</td>
+<td>84</td>
+<td>3</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>372</td>
+<td>2</td>
+<td>14</td>
+<td>336</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>137</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>457</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ecsminer-wf">ECSMiner-WF</h3>
+<p>Let's train our model on the offline (known) data.</p>
+<pre><code class="language-python">from streamndr.model import ECSMinerWF
+clf = ECSMinerWF(K=5, min_examples_cluster=5, verbose=1, random_state=42, ensemble_size=20)
+clf.learn_many(np.array(X_train), np.array(y_train))
+</code></pre>
+<p>Once again, let's use our model in an online fashion.</p>
+<pre><code class="language-python">conf_matrix = metrics.ConfusionMatrix()
+
+for x, y_true in zip(X_test, y_test):
+
+    y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
+
+    if y_pred is not None:
+        conf_matrix = conf_matrix.update(y_true, y_pred[0])
+</code></pre>
+<p>The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.</p>
+<pre><code class="language-python">print(conf_matrix)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>-1</strong></th>
+<th><strong>0</strong></th>
+<th><strong>1</strong></th>
+<th><strong>2</strong></th>
+<th><strong>3</strong></th>
+<th><strong>4</strong></th>
+<th><strong>5</strong></th>
+<th><strong>6</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>-1</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>0</strong></td>
+<td>92</td>
+<td>835</td>
+<td>219</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>216</td>
+<td>180</td>
+<td>2131</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>44</td>
+<td>6</td>
+<td>673</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>106</td>
+<td>280</td>
+<td>88</td>
+<td>0</td>
+<td>67</td>
+<td>23</td>
+<td>19</td>
+<td>11</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>6</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.2a6f1dda.min.js"></script>
+      
+    
+  </body>
+</html>
