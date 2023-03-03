@@ -56,12 +56,16 @@
   
     
     
+      
+    
     
     
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
   
     
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -109,6 +113,26 @@
       </div>
     </div>
     
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3Z"/></svg>
+            </label>
+          
+        
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+          
+        
+      </form>
+    
     
     
     
@@ -120,6 +144,64 @@
       
       
         
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href=".." class="md-tabs__link">
+      StreamNDR
+    </a>
+  </li>
+
+      
+        
+  
+  
+    
+  
+
+
+  <li class="md-tabs__item">
+    <a href="./" class="md-tabs__link md-tabs__link--active">
+      Getting Started
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../model/ecsminerwf/" class="md-tabs__link">
+        API Reference
+      </a>
+    </li>
+  
+
+  
+
+      
+    </ul>
+  </div>
+</nav>
           
         
       
@@ -133,8 +215,10 @@
                   <div class="md-sidebar__inner">
                     
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="StreamNDR Docs" class="md-nav__button md-logo" aria-label="StreamNDR Docs" data-md-component="logo">
       
@@ -261,6 +345,12 @@
       <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
       
       
+        
+          
+        
+          
+        
+      
       
         <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
           API Reference
@@ -287,6 +377,12 @@
       
       <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
       
+      
+        
+          
+        
+          
+        
       
       
         <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
@@ -349,6 +445,10 @@
       
       <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
       
+      
+        
+          
+        
       
       
         <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
@@ -468,142 +568,95 @@
 <h1 id="getting-started">Getting Started</h1>
 <h2 id="installation">🛠 Installation</h2>
 <p><strong>Note</strong>: StreamNDR is intended to be used with Python 3.6 or above and requires the package <a href="https://pypi.org/project/clusopt-core/">ClusOpt-Core</a> which requires a C/C++ compiler (such as gcc) and the <a href="https://robots.uc3m.es/installation-guides/install-boost.html">Boost.Thread library</a> to build. To install the Boost.Thread library on Debian systems, the following command can be used:</p>
-<pre><code class="language-console">sudo apt install libboost-thread-dev
-</code></pre>
-<p>The package can be installed simply with <code>pip</code> :</p>
-<pre><code class="language-console">pip install streamndr
-</code></pre>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">sudo apt install libboost-thread-dev</span>
+</span></code></pre></div>
+<p>The package can be installed simply with <code>pip</code> :
+<div class="language-console highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">pip install streamndr</span>
+</span></code></pre></div></p>
 <h2 id="quickstart">⚡️ Quickstart</h2>
 <p>As a quick example, we'll train two models (MINAS and ECSMiner-WF) to classify a synthetic dataset created using <a href="https://riverml.xyz/dev/api/datasets/synth/RandomRBF/">RandomRBF</a>. The models are trained on only two of the four generated classes ([0,1]) and will try to detect the other classes ([2,3]) as novelty patterns in the dataset in an online fashion.</p>
-<p>Let's first generate the dataset.</p>
-<pre><code class="language-python">import numpy as np
-from river.datasets import synth
-
-ds = synth.RandomRBF(seed_model=42, seed_sample=42, n_classes=4, n_features=5, n_centroids=10)
-
-offline_size = 1000
-online_size = 5000
-X_train = []
-y_train = []
-X_test = []
-y_test = []
-
-for x,y in ds.take(10*(offline_size+online_size)):
-
-    #Create our training data (known classes)
-    if len(y_train) &lt; offline_size:
-        if y == 0 or y == 1: #Only showing two first classes in the training set
-            X_train.append(np.array(list(x.values())))
-            y_train.append(y)
-
-    #Create our online stream of data
-    elif len(y_test) &lt; online_size:
-        X_test.append(x)
-        y_test.append(y)
-
-    else:
-        break
-
-X_train = np.array(X_train)
-y_train = np.array(y_train)
-</code></pre>
+<p>Let's first generate the dataset.
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">river.datasets</span> <span class="kn">import</span> <span class="n">synth</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">ds</span> <span class="o">=</span> <span class="n">synth</span><span class="o">.</span><span class="n">RandomRBF</span><span class="p">(</span><span class="n">seed_model</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">seed_sample</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">n_classes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_centroids</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">offline_size</span> <span class="o">=</span> <span class="mi">1000</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">online_size</span> <span class="o">=</span> <span class="mi">5000</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">X_train</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">y_train</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">X_test</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">y_test</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="k">for</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="p">(</span><span class="n">offline_size</span><span class="o">+</span><span class="n">online_size</span><span class="p">)):</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="c1">#Create our training data (known classes)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">offline_size</span><span class="p">:</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>        <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#Only showing two first classes in the training set</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>            <span class="n">X_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>            <span class="n">y_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="c1">#Create our online stream of data</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">online_size</span><span class="p">:</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>        <span class="n">X_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>        <span class="n">y_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="k">break</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="n">X_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="n">y_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span>
+</span></code></pre></div></p>
 <h3 id="minas">MINAS</h3>
-<p>Let's train our MINAS model on the offline (known) data.</p>
-<pre><code class="language-python">from streamndr.model import Minas
-clf = Minas(kini=10, cluster_algorithm='kmeans', 
-            window_size=100, threshold_strategy=1, threshold_factor=1.1, 
-            min_short_mem_trigger=100, min_examples_cluster=3, verbose=1, random_state=42)
-
-clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
-</code></pre>
+<p>Let's train our MINAS model on the offline (known) data.
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">streamndr.model</span> <span class="kn">import</span> <span class="n">Minas</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">clf</span> <span class="o">=</span> <span class="n">Minas</span><span class="p">(</span><span class="n">kini</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">cluster_algorithm</span><span class="o">=</span><span class="s1">&#39;kmeans&#39;</span><span class="p">,</span> 
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>            <span class="n">window_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold_strategy</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold_factor</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> 
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>            <span class="n">min_short_mem_trigger</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">min_examples_cluster</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">clf</span><span class="o">.</span><span class="n">learn_many</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_train</span><span class="p">))</span> <span class="c1">#learn_many expects numpy arrays or pandas dataframes</span>
+</span></code></pre></div></p>
 <p>Let's now test our algorithm in an online fashion, note that our unsupervised clusters are automatically updated with the call to <code>predict_one</code>.</p>
-<pre><code class="language-python">from river import metrics
-
-conf_matrix = metrics.ConfusionMatrix()
-
-for x, y_true in zip(X_test, y_test):
-
-    y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
-
-    if y_pred is not None:
-        conf_matrix = conf_matrix.update(y_true, y_pred[0])
-</code></pre>
-<p>Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. Of course, the hyperparameters of the model can be tuned a lot more to get better results.</p>
-<pre><code class="language-python">print(conf_matrix)
-</code></pre>
-<table>
-<thead>
-<tr>
-<th></th>
-<th><strong>-1</strong></th>
-<th><strong>0</strong></th>
-<th><strong>1</strong></th>
-<th><strong>2</strong></th>
-<th><strong>3</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>-1</strong></td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td><strong>0</strong></td>
-<td>819</td>
-<td>286</td>
-<td>17</td>
-<td>6</td>
-<td>22</td>
-</tr>
-<tr>
-<td><strong>1</strong></td>
-<td>1260</td>
-<td>3</td>
-<td>1182</td>
-<td>84</td>
-<td>3</td>
-</tr>
-<tr>
-<td><strong>2</strong></td>
-<td>372</td>
-<td>2</td>
-<td>14</td>
-<td>336</td>
-<td>0</td>
-</tr>
-<tr>
-<td><strong>3</strong></td>
-<td>137</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>457</td>
-</tr>
-</tbody>
-</table>
+<p><div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">river</span> <span class="kn">import</span> <span class="n">metrics</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">conf_matrix</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">ConfusionMatrix</span><span class="p">()</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_true</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">):</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict_one</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1">#predict_one takes python dictionaries as per River API</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="k">if</span> <span class="n">y_pred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="n">conf_matrix</span> <span class="o">=</span> <span class="n">conf_matrix</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span></code></pre></div>
+Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. Of course, the hyperparameters of the model can be tuned a lot more to get better results.
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">conf_matrix</span><span class="p">)</span>
+</span></code></pre></div>
+|        | <strong>-1</strong> | <strong>0</strong> | <strong>1</strong> | <strong>2</strong> | <strong>3</strong> |
+|--------|--------|-------|-------|-------|-------|
+| <strong>-1</strong> | 0      | 0     | 0     | 0     | 0     |
+| <strong>0</strong>  | 819    | 286   | 17    | 6     | 22    |
+| <strong>1</strong>  | 1260   | 3     | 1182  | 84    | 3     |
+| <strong>2</strong>  | 372    | 2     | 14    | 336   | 0     |
+| <strong>3</strong>  | 137    | 0     | 0     | 0     | 457   |</p>
 <h3 id="ecsminer-wf">ECSMiner-WF</h3>
 <p>Let's train our model on the offline (known) data.</p>
-<pre><code class="language-python">from streamndr.model import ECSMinerWF
-clf = ECSMinerWF(K=5, min_examples_cluster=5, verbose=1, random_state=42, ensemble_size=20)
-clf.learn_many(np.array(X_train), np.array(y_train))
-</code></pre>
-<p>Once again, let's use our model in an online fashion.</p>
-<pre><code class="language-python">conf_matrix = metrics.ConfusionMatrix()
-
-for x, y_true in zip(X_test, y_test):
-
-    y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
-
-    if y_pred is not None:
-        conf_matrix = conf_matrix.update(y_true, y_pred[0])
-</code></pre>
-<p>The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.</p>
-<pre><code class="language-python">print(conf_matrix)
-</code></pre>
+<p><div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span> <span class="nn">streamndr.model</span> <span class="kn">import</span> <span class="n">ECSMinerWF</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">clf</span> <span class="o">=</span> <span class="n">ECSMinerWF</span><span class="p">(</span><span class="n">K</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_examples_cluster</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">clf</span><span class="o">.</span><span class="n">learn_many</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_train</span><span class="p">))</span>
+</span></code></pre></div>
+Once again, let's use our model in an online fashion.
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">conf_matrix</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">ConfusionMatrix</span><span class="p">()</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_true</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">):</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict_one</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1">#predict_one takes python dictionaries as per River API</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="k">if</span> <span class="n">y_pred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="n">conf_matrix</span> <span class="o">=</span> <span class="n">conf_matrix</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span></code></pre></div></p>
+<p>The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">conf_matrix</span><span class="p">)</span>
+</span></code></pre></div></p>
 <table>
 <thead>
 <tr>
@@ -746,7 +799,7 @@ for x, y_true in zip(X_test, y_test):
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "navigation.tabs", "navigation.instant", "navigation.indexes", "navigation.tracking"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../assets/javascripts/bundle.2a6f1dda.min.js"></script>
