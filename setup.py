@@ -5,7 +5,7 @@ import setuptools
 NAME = "streamndr"
 DESCRIPTION = "Stream Novelty Detection for River"
 LONG_DESCRIPTION_CONTENT_TYPE = "text/markdown"
-URL = "https://online-ml.github.io/deep-river/"
+URL = "https://jgaud.github.io/streamndr/"
 EMAIL = "jean-gabrielgaudreault@outlook.com"
 AUTHOR = "Jean-Gabriel Gaudreault"
 REQUIRES_PYTHON = ">=3.6.0"

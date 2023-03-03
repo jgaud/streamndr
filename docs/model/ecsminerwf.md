@@ -1,2 +1,1 @@
-#ECSMinerWF
 ::: streamndr.model.ecsminerwf

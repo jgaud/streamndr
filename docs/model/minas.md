@@ -1,2 +1,1 @@
-#MINAS
 ::: streamndr.model.minas
