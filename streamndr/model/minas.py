@@ -206,63 +206,14 @@ class Minas(base.MiniBatchClassifier):
         return np.array(pred_label)
 
     def predict_proba_one(self,X):
-        """Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
-        It is only added as to follow River's API.
-
-        Parameters
-        ----------
-        X : dict
-            Sample
-        """
-        # Not applicable
+        #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
+        #It is only added as to follow River's API.
         pass
     
     def predict_proba_many(self, X):
-        """Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
-        It is only added as to follow River's API.
-
-        Parameters
-        ----------
-        X : Pandas.DataFrame or numpy.ndarray
-            Samples
-        """
-        # Not applicable
+        #Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
+        #It is only added as to follow River's API.
         pass
-
-    def confusion_matrix(self, X_test, y_test):
-        """Creates a confusion matrix.
-
-        It must be run on a fitted classifier that has already seen the examples in the test set.
-
-        Parameters
-        ----------
-        X_test : numpy.ndarray
-            The set of data samples to predict the class labels for.
-        y_test : numpy.ndarray
-            The set of class labels for the data samples.
-
-        Returns
-        -------
-        river.metrics.ConfusionMatrix
-
-        """
-        if isinstance(X_test, pd.DataFrame):
-            X_test = X_test.to_numpy()
-
-        closest_clusters = self._get_closest_clusters(X_test, [microcluster.centroid for microcluster in self.microclusters])
-
-        conf_matrix = metrics.ConfusionMatrix()
-        
-        for i in range(len(closest_clusters)):
-            closest_cluster = self.microclusters[closest_clusters[i]]
-
-            if closest_cluster.encompasses(X_test[i]):  # classify in this cluster
-                conf_matrix = conf_matrix.update(y_test[i], closest_cluster.label)
-
-            else:  # classify as unknown
-                conf_matrix = conf_matrix.update(y_test[i], -1)
-
-        return conf_matrix
 
     def _offline(self, X_train, y_train):
         microclusters = []

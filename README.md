@@ -83,7 +83,7 @@ Let's train our MINAS model on the offline (known) data.
 from streamndr.model import Minas
 clf = Minas(kini=10, cluster_algorithm='kmeans', 
             window_size=100, threshold_strategy=1, threshold_factor=1.1, 
-            min_short_mem_trigger=100, min_examples_cluster=3, verbose=1, random_state=42)
+            min_short_mem_trigger=100, min_examples_cluster=50, verbose=1, random_state=42)
 
 clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
 ```
@@ -91,28 +91,44 @@ clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy a
 Let's now test our algorithm in an online fashion, note that our unsupervised clusters are automatically updated with the call to ```predict_one```.
 
 ```python
-from river import metrics
+from streamndr.metrics import ConfusionMatrixNovelty, MNew, FNew, ErrRate
 
-conf_matrix = metrics.ConfusionMatrix()
+known_classes = [0,1]
+
+conf_matrix = ConfusionMatrixNovelty(known_classes)
+m_new = MNew(known_classes)
+f_new = FNew(known_classes)
+err_rate = ErrRate(known_classes)
 
 for x, y_true in zip(X_test, y_test):
 
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
     
-    if y_pred is not None:
+    if y_pred is not None: #Update our metrics
         conf_matrix = conf_matrix.update(y_true, y_pred[0])
+        m_new = m_new.update(y_true, y_pred[0])
+        f_new = f_new.update(y_true, y_pred[0])
+        err_rate = err_rate.update(y_true, y_pred[0])
 ```
-Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. Of course, the hyperparameters of the model can be tuned a lot more to get better results.
+Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. The percentage of novel classes instances misclassified as known is also fairly low (2.05%), but we did classified a lot of our known classes samples as novel ones (54.13%). Of course, the hyperparameters of the model can be tuned a lot more to get better results.
 ```python
 print(conf_matrix)
+print(m_new) #Percentage of novel class instances misclassified as known.
+print(f_new) #Percentage of known classes misclassified as novel.
+print(err_rate) #Total misclassification error percentage
 ```
 |        | **-1** | **0** | **1** | **2** | **3** |
 |--------|--------|-------|-------|-------|-------|
 | **-1** | 0      | 0     | 0     | 0     | 0     |
-| **0**  | 819    | 286   | 17    | 6     | 22    |
-| **1**  | 1260   | 3     | 1182  | 84    | 3     |
-| **2**  | 372    | 2     | 14    | 336   | 0     |
-| **3**  | 137    | 0     | 0     | 0     | 457   |
+| **0**  | 722    | 341   | 33    | 10     | 44    |
+| **1**  | 1155   | 19     | 1296  | 58    | 4     |
+| **2**  | 386    | 7     | 19    | 312   | 0     |
+| **3**  | 172    | 1     | 0     | 0     | 421   |
+
+MNew: 2.05% <br/>
+FNew: 54.13% <br/>
+ErrRate: 41.44% <br/>
+
 
 ### ECSMiner-WF
 Let's train our model on the offline (known) data.
@@ -124,22 +140,29 @@ clf.learn_many(np.array(X_train), np.array(y_train))
 ```
 Once again, let's use our model in an online fashion.
 ```python
-conf_matrix = metrics.ConfusionMatrix()
+conf_matrix = ConfusionMatrixNovelty(known_classes)
+m_new = MNew(known_classes)
+f_new = FNew(known_classes)
+err_rate = ErrRate(known_classes)
 
 for x, y_true in zip(X_test, y_test):
 
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
     
-    if y_pred is not None:
+    if y_pred is not None: #Update our metrics
         conf_matrix = conf_matrix.update(y_true, y_pred[0])
+        m_new = m_new.update(y_true, y_pred[0])
+        f_new = f_new.update(y_true, y_pred[0])
+        err_rate = err_rate.update(y_true, y_pred[0])
 ```
 
-The confusion matrix shows us that ECSMiner successfully detected our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
+The confusion matrix shows us that ECSMiner successfully detected some of the samples of our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
 ```python
 print(conf_matrix)
+print(m_new) #Percentage of novel class instances misclassified as known.
+print(f_new) #Percentage of known classes misclassified as novel.
+print(err_rate) #Total misclassification error percentage
 ```
-
-
 |        | **-1** | **0** | **1** | **2** | **3** | **4** | **5** | **6** |
 |--------|--------|-------|-------|-------|-------|-------|-------|-------|
 | **-1** | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
@@ -150,6 +173,10 @@ print(conf_matrix)
 | **4**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
 | **5**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
 | **6**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
+
+MNew: 79.44% <br/>
+FNew: 8.61% <br/>
+ErrRate: 35.26% <br/>
 
 ## Special Thanks
 Special thanks goes to Vítor Bernardes, from which some of the code for MINAS is based on their [implementation](https://github.com/vbernardes/minas).

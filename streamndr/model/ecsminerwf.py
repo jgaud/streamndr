@@ -68,19 +68,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
         self.before_offline_phase = True
         
     def learn_one(self, x, y, w=1.0):
-        """Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
-        to arrive at once. It is only added as to follow River's API.
-
-        Parameters
-        ----------
-        x : dict
-            Sample
-        y : int
-            Label of the given sample
-        w : float, optional
-            Weight, not used, by default 1.0
-        """
-        # Not applicable
+        #Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
+        #to arrive at once. It is only added as to follow River's API.
         pass
         
 
@@ -212,46 +201,15 @@ class ECSMinerWF(base.MiniBatchClassifier):
                     
         return np.array(pred_label)
     
+    def predict_proba_one(self,X):
+        #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
+        #It is only added as to follow River's API.
+        pass
     
-    def confusion_matrix(self, X_test, y_test):
-        """Creates a confusion matrix.
-
-        It must be run on a fitted classifier that has already seen the examples in the test set.
-
-        Parameters
-        ----------
-        X_test : numpy.ndarray
-            The set of data samples to predict the class labels for.
-        y_test : numpy.ndarray
-            The set of class labels for the data samples.
-
-        Returns
-        -------
-        river.metrics.ConfusionMatrix
-
-        """
-        if isinstance(X_test, pd.DataFrame):
-            X_test = X_test.to_numpy()
-        
-        closest_model_cluster, y_preds = self._majority_voting(X_test)
-        conf_matrix = metrics.ConfusionMatrix()
-        
-        if len(self.novel_models) > 0: #We have novel clusters in our list
-            novel_closest_clusters, _ = self._get_closest_clusters(X_test, [microcluster.centroid for microcluster in self.novel_models])
-        
-        for i in range(len(X_test)):
-            closest_cluster = self.models[closest_model_cluster[i][0]][closest_model_cluster[i][1]]
-            
-            if closest_cluster.distance_to_centroid(X_test[i]) <= closest_cluster.max_distance: # classify with the label from majority voting
-                conf_matrix = conf_matrix.update(y_test[i], y_preds[i])
-                
-            elif (len(self.novel_models) > 0) and (self.novel_models[novel_closest_clusters[i]].distance_to_centroid(X_test[i]) <= closest_cluster.max_distance): #One of our novel cluster can explain our sample
-                conf_matrix = conf_matrix.update(y_test[i], self.novel_models[novel_closest_clusters[i]].label)
-
-            else:  # classify as unknown
-                conf_matrix = conf_matrix.update(y_test[i], -1)
-
-        return conf_matrix
+    def predict_proba_many(self, X):
+        #Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
+        #It is only added as to follow River's API.
+        pass
     
     def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0):
         clf = KMeans(n_clusters=K, n_init='auto', random_state=self.random_state).fit(X)

@@ -4,21 +4,44 @@ dev_addr: 192.168.1.169:8000
 
 theme:
   name: material
+  palette:
+    # Light mode
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
 
-nav:
-  - index.md
-  - getting_started.md
-  #- examples.md
-  - 'API Reference':
-    - 'model':
-      - 'ecsminerwf': model/ecsminerwf.md
-      - 'minas': model/minas.md
-    - 'utils':
-      - 'data_structure': utils/data_structure.md
+    # Dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.instant
+    - navigation.indexes
+    - navigation.tracking
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 plugins:
-- mkdocstrings:
-    handlers:
-      python:
-        options:
-          docstring_style: numpy
+  - literate-nav:
+        nav_file: SUMMARY.md
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
