@@ -9,17 +9,17 @@
       
       
       
-        <link rel="prev" href="../confusion/">
+        <link rel="prev" href="../m_new/">
       
       
-        <link rel="next" href="../f_new/">
+        <link rel="next" href="../../model/ecsminerwf/">
       
       <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.15">
     
     
       
-        <title>err_rate - StreamNDR Docs</title>
+        <title>unk_rate - StreamNDR Docs</title>
       
     
     
@@ -73,7 +73,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#streamndr.metrics.err_rate" class="md-skip">
+        <a href="#streamndr.metrics.unk_rate" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              err_rate
+              unk_rate
             
           </span>
         </div>
@@ -392,55 +392,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          err_rate
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../err_rate/" class="md-nav__link">
         err_rate
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#streamndr.metrics.err_rate" class="md-nav__link">
-    streamndr.metrics.err_rate
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#streamndr.metrics.err_rate.ErrRate" class="md-nav__link">
-    ErrRate
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -478,11 +434,55 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../unk_rate/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          unk_rate
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         unk_rate
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#streamndr.metrics.unk_rate" class="md-nav__link">
+    streamndr.metrics.unk_rate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streamndr.metrics.unk_rate.UnkRate" class="md-nav__link">
+    UnkRate
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -646,15 +646,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#streamndr.metrics.err_rate" class="md-nav__link">
-    streamndr.metrics.err_rate
+  <a href="#streamndr.metrics.unk_rate" class="md-nav__link">
+    streamndr.metrics.unk_rate
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#streamndr.metrics.err_rate.ErrRate" class="md-nav__link">
-    ErrRate
+  <a href="#streamndr.metrics.unk_rate.UnkRate" class="md-nav__link">
+    UnkRate
   </a>
   
 </li>
@@ -674,12 +674,12 @@
                   
 
 
-  <h1>err_rate</h1>
+  <h1>unk_rate</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="streamndr.metrics.err_rate"></a>
+<a id="streamndr.metrics.unk_rate"></a>
   <div class="doc doc-contents first">
 
   
@@ -697,8 +697,8 @@
 
 
 
-<h2 id="streamndr.metrics.err_rate.ErrRate" class="doc doc-heading">
-        <code>ErrRate</code>
+<h2 id="streamndr.metrics.unk_rate.UnkRate" class="doc doc-heading">
+        <code>UnkRate</code>
 
 
 </h2>
@@ -709,7 +709,7 @@
         Bases: <code><span title="river.metrics">metrics</span>.<span title="river.metrics.base">base</span>.<span title="metrics.base.MultiClassMetric">MultiClassMetric</span></code></p>
 
   
-      <p>Error rate, represents the total misclassification error percentage.</p>
+      <p>Unknown rate, represents the percentage of unknown samples.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -757,7 +757,7 @@
 
 
         <details class="quote">
-          <summary>Source code in <code>streamndr/metrics/err_rate.py</code></summary>
+          <summary>Source code in <code>streamndr/metrics/unk_rate.py</code></summary>
           <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
 <span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
 <span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
@@ -779,11 +779,8 @@
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="k">class</span> <span class="nc">ErrRate</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">MultiClassMetric</span><span class="p">):</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Error rate, represents the total misclassification error percentage.</span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="k">class</span> <span class="nc">UnkRate</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">MultiClassMetric</span><span class="p">):</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Unknown rate, represents the percentage of unknown samples.</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8"></a>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    Parameters</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    ----------</span>
@@ -800,13 +797,10 @@
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="nb">super</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">MultiClassMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cm</span><span class="p">)</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">fp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">false_positives_novelty</span><span class="p">()</span> <span class="c1">#Number of known class samples wrongly classified as novelties</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">false_negatives_novelty</span><span class="p">()</span> <span class="c1">#Number of novelties wrongly classified as known</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>            <span class="k">return</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="n">fn</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">fe</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">n_samples</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>            <span class="k">return</span> <span class="mf">0.0</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">sum_col</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">n_samples</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a>            <span class="k">return</span> <span class="mf">0.0</span>
 </span></code></pre></div></td></tr></table></div>
         </details>
 
