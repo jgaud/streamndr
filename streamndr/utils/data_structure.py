@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["MicroCluster", "ShortMemInstance"]
+
 class MicroCluster(object):
     """A representation of a cluster with compressed information.
 

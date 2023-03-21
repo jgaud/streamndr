@@ -22,6 +22,38 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
         self.novel_cm = metrics.confusion.ConfusionMatrix()
         self.nc_samples = 0
         self.fe = 0
+
+    def get_associated_classes(self):
+        """Computes the associated known class to each novelty pattern discovered, as described in [1], by using the real class most represented in each novelty pattern.
+        Ignores the unkown samples (label -1).
+
+        [1] E. R. Faria, I. J. C. R. Gonçalves, J. Gama and A. C. P. L. F. Carvalho, "Evaluation Methodology for Multiclass Novelty Detection Algorithms," 
+        2013 Brazilian Conference on Intelligent Systems, Fortaleza, Brazil, 2013, pp. 19-25, doi: 10.1109/BRACIS.2013.12.
+        
+        Returns
+        -------
+        ConfusionMatrixNovelty
+            The confusion matrix using the most represented known class for each of the novelty pattern reported
+        """
+        associated_classes_conf_matrix = ConfusionMatrixNovelty(self._init_classes)
+        unknown_classes = [x for x in self.classes if x not in self._init_classes.union({-1})]
+
+        for cl in self.classes:
+            col = [int(self.data[row][cl]) for row in self.classes]
+            
+            #If the class is a novelty pattern, we select the real class most represented within the novelty pattern
+            if cl in unknown_classes:
+                index_max = col.index(max(col))
+                pred = self.classes[index_max]
+
+                for row in self.classes:
+                    associated_classes_conf_matrix.update(row, pred, col[row])
+            elif cl != -1:
+                for row in self.classes:
+                    associated_classes_conf_matrix.update(row, cl, col[row])
+
+        return associated_classes_conf_matrix
+    
         
     def update(self, y_true, y_pred, sample_weight=1.0):
         super().update(y_true, y_pred, sample_weight)

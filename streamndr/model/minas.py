@@ -9,6 +9,7 @@ from sklearn.cluster import KMeans
 
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
 
+__all__ = ["Minas"]
 
 class Minas(base.MiniBatchClassifier):
     """Implementation of the MINAS algorithm for novelty detection.

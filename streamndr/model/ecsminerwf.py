@@ -9,6 +9,7 @@ from sklearn.cluster import KMeans
 
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
 
+__all__ = ["ECSMinerWF"]
 
 class ECSMinerWF(base.MiniBatchClassifier):
     """Implementation of the ECSMinerWF (ECSMiner without feedback) algorithm for novelty detection.

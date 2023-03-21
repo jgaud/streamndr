@@ -91,6 +91,7 @@ print(m_new) #Percentage of novel class instances misclassified as known.
 print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
+
 |        | **-1** | **0** | **1** | **2** | **3** |
 |--------|--------|-------|-------|-------|-------|
 | **-1** | 0      | 0     | 0     | 0     | 0     |
@@ -137,6 +138,7 @@ print(m_new) #Percentage of novel class instances misclassified as known.
 print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
+
 |        | **-1** | **0** | **1** | **2** | **3** | **4** | **5** | **6** |
 |--------|--------|-------|-------|-------|-------|-------|-------|-------|
 | **-1** | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
