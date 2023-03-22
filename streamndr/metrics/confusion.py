@@ -47,10 +47,10 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
                 pred = self.classes[index_max]
 
                 for row in self.classes:
-                    associated_classes_conf_matrix.update(row, pred, col[row])
+                    associated_classes_conf_matrix.update(row, pred, self.data[row][cl])
             elif cl != -1:
                 for row in self.classes:
-                    associated_classes_conf_matrix.update(row, cl, col[row])
+                    associated_classes_conf_matrix.update(row, cl, self.data[row][cl])
 
         return associated_classes_conf_matrix
     
