@@ -103,13 +103,13 @@ class MicroCluster(object):
 
         factor = 1.5
         # from BIRCH Wikipedia
-        #diff = (self.squared_sum / self.n) - np.dot(self.centroid, self.centroid)
-        #if diff > 1e-15:
-            #return factor * np.sqrt(diff)
-        #else:  # in this case diff should be zero, but sometimes it's an infinitesimal difference
-            #return 0
+        diff = (self.squared_sum / self.n) - np.dot(self.centroid, self.centroid)
+        if diff > 1e-15:
+            return factor * np.sqrt(diff)
+        else:  # in this case diff should be zero, but sometimes it's an infinitesimal difference
+            return 0
         # from MINAS paper:
-        return factor*np.std(self.distance_to_centroid(self.instances))
+        #return factor*np.std(self.distance_to_centroid(self.instances))
 
     def distance_to_centroid(self, X):
         """Returns distance from X to centroid of this cluster.
