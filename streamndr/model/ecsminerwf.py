@@ -202,6 +202,16 @@ class ECSMinerWF(base.MiniBatchClassifier):
                     
         return np.array(pred_label)
     
+    def get_unknown_rate(self):
+        """Returns the unknown rate, represents the percentage of unknown samples on the total number of samples classified in the online phase.
+
+        Returns
+        -------
+        float
+            Unknown rate
+        """
+        return len(self.short_mem) / self.sample_counter
+    
     def predict_proba_one(self,X):
         #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
         #It is only added as to follow River's API.
