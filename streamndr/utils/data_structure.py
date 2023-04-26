@@ -185,7 +185,7 @@ class MicroCluster(object):
             self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n + 1)
             self.n += 1
             self.linear_sum = np.sum([self.linear_sum, X], axis=0)
-            self.squared_sum = np.sum([self.squared_sum, np.square(X)], axis=0)
+            self.squared_sum = np.sum([self.squared_sum, np.square(X).sum()], axis=0)
             self.update_properties()
 
     def update_properties(self):
