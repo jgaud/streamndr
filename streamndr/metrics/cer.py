@@ -1,3 +1,5 @@
+import math
+import numpy as np
 from river import metrics
 from streamndr.metrics.confusion import ConfusionMatrixNovelty
 
@@ -13,14 +15,18 @@ class CER(metrics.base.MultiClassMetric):
     ----------
     known_classes : list of int
         List of known labels, the labels the algorithm knows prior to the online phase
+    cm : ConfusionMatrixNovelty
+        Optional, can specify an already existing confusion matrix instead of creating a new one for the metric
 
     Attributes
     ----------
     cm : ConfusionMatrixNovelty
         Confusion matrix
     """
-    def __init__(self, known_classes):
-        cm = ConfusionMatrixNovelty(known_classes)
+    def __init__(self, known_classes, cm: ConfusionMatrixNovelty = None):
+        if cm is None:
+            cm = ConfusionMatrixNovelty(known_classes)
+        
         super(metrics.base.MultiClassMetric, self).__init__(cm)
     
     def get(self):
@@ -47,3 +53,28 @@ class CER(metrics.base.MultiClassMetric):
 
         return total / 2
 
+    def get_aic(self):
+        """Computes the Akaike Information Criterion (AIC) as defined in [1], which measures the complexity of the model using the CER and the number of classes detected.
+
+        Returns
+        -------
+        float
+            The Akaike Information Criterion (AIC)
+        """
+        all_classes = self.cm.classes
+        
+        if -1 in all_classes:
+            all_classes.remove(-1)
+        
+        num_classes_detected = 0
+        N = 0
+
+        for cl in all_classes:
+            N += self.cm.sum_col[cl]
+            if self.cm.sum_col[cl] > 0:
+                num_classes_detected += 1
+
+        try:
+            return -2 * math.log(1-self.get()) + 2 * num_classes_detected / math.log(N)
+        except:
+            return 0.0

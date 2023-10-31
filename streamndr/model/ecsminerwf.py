@@ -35,6 +35,10 @@ class ECSMinerWF(base.MiniBatchClassifier):
         List containing the models created in the offline phase. In other words, it contains multiple lists of MicroClusters.
     novel_models : list of MicroCluster
         Contains the clusters representing novel classes, added during the online phase
+    nb_class_unknown : dict
+        Tracks the number of samples of each true class value currently in the unknown buffer (short_mem). Used to compute the unknown rate.
+    class_sample_counter : dict
+        Tracks the total number of samples of each true class value seen in the stream. Used to compute the unknown rate.
     sample_counter : int
         Number of samples treated, used by the forgetting mechanism
     short_mem : list of ShortMemInstance
@@ -63,6 +67,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
 
         self.models = []
         self.novel_models = []
+        self.nb_class_unknown = dict()
+        self.class_sample_counter = dict()
         self.sample_counter = 0
         self.short_mem = [] #Potential novel class instances
         self.last_nd = -self.min_examples_cluster #No novelty detection performed yet
@@ -110,7 +116,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         
         return self
     
-    def predict_one(self, X):
+    def predict_one(self, X, y=None):
         """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label and adds 
         it to the cluster if it is a known class. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
         performed once the trigger has been reached (min_examples_cluster).
@@ -119,16 +125,18 @@ class ECSMinerWF(base.MiniBatchClassifier):
         ----------
         X : dict
             Sample
+        y : int
+            True y value of the sample, if available. Only used for metric evaluation (UnkRate).
 
         Returns
         -------
         numpy.ndarray
             Label predicted for the given sample, predicts -1 if labeled as unknown
         """
-        return self.predict_many(np.array(list(X.values()))[None,:])
+        return self.predict_many(np.array(list(X.values()))[None,:], [y])
             
 
-    def predict_many(self, X):
+    def predict_many(self, X, y=None):
         """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
         Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_examples_cluster).
 
@@ -136,6 +144,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
         ----------
         X : pandas.DataFrame or numpy.ndarray
             Samples
+        y : list of int
+            True y values of the samples, if available. Only used for metric evaluation (UnkRate).
 
         Returns
         -------
@@ -161,6 +171,11 @@ class ECSMinerWF(base.MiniBatchClassifier):
         pred_label = []
         for i in range(len(X)):
             self.sample_counter += 1
+            if y is not None:
+                if y[i] not in self.class_sample_counter:
+                    self.class_sample_counter[y[i]] = 1
+                else:
+                    self.class_sample_counter[y[i]] += 1
             
             closest_cluster = self.models[closest_model_cluster[i][0]][closest_model_cluster[i][1]]
             
@@ -176,7 +191,15 @@ class ECSMinerWF(base.MiniBatchClassifier):
                 
             else: #Classify as unknown
                 pred_label.append(-1)
-                self.short_mem.append(ShortMemInstance(X[i], self.sample_counter))
+
+                if y is not None:
+                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter, y[i]))
+                    if y[i] not in self.nb_class_unknown:
+                        self.nb_class_unknown[y[i]] = 1
+                    else:
+                        self.nb_class_unknown[y[i]] += 1
+                else:
+                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter))
 
                 if len(self.short_mem) > self.min_examples_cluster and (self.last_nd + self.min_examples_cluster) <= self.sample_counter:
                     self.last_nd = self.sample_counter
@@ -198,7 +221,11 @@ class ECSMinerWF(base.MiniBatchClassifier):
 
                             #Remove instances from the buffer
                             for instance in novel_cluster.instances:
-                                self.short_mem.remove(instance)
+                                index = self.short_mem.index(instance)
+                                y_true = self.short_mem[index].y_true
+                                if y_true is not None:
+                                    self.nb_class_unknown[y_true] -= 1
+                                self.short_mem.pop(index)
                     
         return np.array(pred_label)
     
@@ -212,6 +239,16 @@ class ECSMinerWF(base.MiniBatchClassifier):
         """
         return len(self.short_mem) / self.sample_counter
     
+    def get_class_unknown_rate(self):
+        """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the unknown rate of each class
+        """
+        return {key: val / self.class_sample_counter[key] for key, val in self.nb_class_unknown.items()}
+    
     def predict_proba_one(self,X):
         #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
         #It is only added as to follow River's API.
@@ -223,7 +260,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         pass
     
     def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0):
-        clf = KMeans(n_clusters=K, n_init='auto', random_state=self.random_state).fit(X)
+        clf = KMeans(n_clusters=K, random_state=self.random_state).fit(X)
         labels = clf.labels_
 
         microclusters = []
@@ -333,7 +370,11 @@ class ECSMinerWF(base.MiniBatchClassifier):
     def _filter_buffer(self):
         for instance in self.short_mem:
             if (self.sample_counter - instance.timestamp > self.chunk_size): #We remove samples that have an age greater than the chunk size
-                self.short_mem.remove(instance)
+                index = self.short_mem.index(instance)
+                y_true = self.short_mem[index].y_true
+                if y_true is not None:
+                    self.nb_class_unknown[y_true] -= 1
+                self.short_mem.pop(index)
             else: #No need to iterate over the whole buffer since older elements are at the beginning
                 break;
         

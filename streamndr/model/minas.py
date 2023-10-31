@@ -47,6 +47,10 @@ class Minas(base.MiniBatchClassifier):
         Buffer memory containing the samples labeled as unknown temporarily for the novelty detection process
     sleep_mem : list of MicroCluster
         Microclusters that have not have any new points added from the strem for a period of time are temporarily moved to a sleep memory
+    nb_class_unknown : dict
+        Tracks the number of samples of each true class value currently in the unknown buffer (short_mem). Used to compute the unknown rate.
+    class_sample_counter : dict
+        Tracks the total number of samples of each true class value seen in the stream. Used to compute the unknown rate.
     sample_counter : int
         Number of samples treated, used by the forgetting mechanism
     """
@@ -80,6 +84,8 @@ class Minas(base.MiniBatchClassifier):
 
         self.short_mem = []
         self.sleep_mem = []
+        self.nb_class_unknown = dict()
+        self.class_sample_counter = dict()
         self.min_short_mem_trigger = min_short_mem_trigger
         self.min_examples_cluster = min_examples_cluster
         self.threshold_strategy = threshold_strategy
@@ -131,7 +137,7 @@ class Minas(base.MiniBatchClassifier):
 
         return self
     
-    def predict_one(self, X):
+    def predict_one(self, X, y=None):
         """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label and adds 
         it to the cluster if it is a known class. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
         performed once the trigger has been reached (min_short_mem_trigger).
@@ -140,15 +146,17 @@ class Minas(base.MiniBatchClassifier):
         ----------
         X : dict
             Sample
+        y : int
+            True y value of the sample, if available. Only used for metric evaluation (UnkRate).
 
         Returns
         -------
         numpy.ndarray
             Label predicted for the given sample, predicts -1 if labeled as unknown
         """
-        return self.predict_many(np.array(list(X.values()))[None,:])
+        return self.predict_many(np.array(list(X.values()))[None,:], [y])
 
-    def predict_many(self, X):
+    def predict_many(self, X, y=None):
         """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
         Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_short_mem_trigger).
 
@@ -156,6 +164,8 @@ class Minas(base.MiniBatchClassifier):
         ----------
         X : pandas.DataFrame or numpy.ndarray
             Samples
+        y : list of int
+            True y values of the samples, if available. Only used for metric evaluation (UnkRate).
 
         Returns
         -------
@@ -180,6 +190,12 @@ class Minas(base.MiniBatchClassifier):
         
         for i in range(len(closest_clusters)):
             self.sample_counter += 1
+            if y is not None:
+                if y[i] not in self.class_sample_counter:
+                    self.class_sample_counter[y[i]] = 1
+                else:
+                    self.class_sample_counter[y[i]] += 1
+
             closest_cluster = self.microclusters[closest_clusters[i]]
 
             if closest_cluster.encompasses(X[i]):  # classify in this cluster
@@ -189,7 +205,15 @@ class Minas(base.MiniBatchClassifier):
 
             else:  # classify as unknown
                 pred_label.append(-1)
-                self.short_mem.append(ShortMemInstance(X[i], self.sample_counter))
+
+                if y is not None:
+                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter, y[i]))
+                    if y[i] not in self.nb_class_unknown:
+                        self.nb_class_unknown[y[i]] = 1
+                    else:
+                        self.nb_class_unknown[y[i]] += 1
+                else:
+                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter))
                 
                 if self.verbose > 1:
                     print('Memory length: ', len(self.short_mem))
@@ -215,6 +239,16 @@ class Minas(base.MiniBatchClassifier):
             Unknown rate
         """
         return len(self.short_mem) / self.sample_counter
+    
+    def get_class_unknown_rate(self):
+        """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the unknown rate of each class
+        """
+        return {key: val / self.class_sample_counter[key] for key, val in self.nb_class_unknown.items()}
 
     def predict_proba_one(self,X):
         #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
@@ -337,7 +371,12 @@ class Minas(base.MiniBatchClassifier):
 
                 # remove these examples from short term memory
                 for instance in cluster.instances:
-                    self.short_mem.remove(instance)
+                    index = self.short_mem.index(instance)
+                    y_true = self.short_mem[index].y_true
+                    if y_true is not None:
+                        self.nb_class_unknown[y_true] -= 1
+                    self.short_mem.pop(index)
+                    
 
     def _best_threshold(self, new_cluster, closest_cluster, strategy):
         def run_strategy_1():
@@ -392,4 +431,8 @@ class Minas(base.MiniBatchClassifier):
                 self.microclusters.remove(cluster)
         for instance in self.short_mem:
             if instance.timestamp < self.sample_counter - self.window_size:
-                self.short_mem.remove(instance)
+                index = self.short_mem.index(instance)
+                y_true = self.short_mem[index].y_true
+                if y_true is not None:
+                    self.nb_class_unknown[y_true] -= 1
+                self.short_mem.pop(index)

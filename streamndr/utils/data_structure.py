@@ -247,10 +247,13 @@ class ShortMemInstance:
         The coordinates of the point
     timestamp : int
         The timestamp the point was added/treated
+    y_true : int
+        The true value of the class
     """
-    def __init__(self, point, timestamp):
+    def __init__(self, point, timestamp, y_true=None):
         self.point = point
         self.timestamp = timestamp
+        self.y_true = y_true
 
     def __eq__(self, other):
         """Elements are equal if they have the same values for all variables.

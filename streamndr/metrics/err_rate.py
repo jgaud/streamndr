@@ -10,14 +10,18 @@ class ErrRate(metrics.base.MultiClassMetric):
     ----------
     known_classes : list of int
         List of known labels, the labels the algorithm knows prior to the online phase
+    cm : ConfusionMatrixNovelty
+        Optional, can specify an already existing confusion matrix instead of creating a new one for the metric
 
     Attributes
     ----------
     cm : ConfusionMatrixNovelty
         Confusion matrix
     """
-    def __init__(self, known_classes):
-        cm = ConfusionMatrixNovelty(known_classes)
+    def __init__(self, known_classes, cm: ConfusionMatrixNovelty = None):
+        if cm is None:
+            cm = ConfusionMatrixNovelty(known_classes)
+        
         super(metrics.base.MultiClassMetric, self).__init__(cm)
     
     def get(self):
