@@ -1,6 +1,7 @@
 import numpy as np
+import math
 
-__all__ = ["MicroCluster", "ShortMemInstance"]
+__all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster"]
 
 class MicroCluster(object):
     """A representation of a cluster with compressed information.
@@ -236,7 +237,110 @@ class MicroCluster(object):
             If the cluster is representative or not
         """
         return self.n >= min_examples
-    
+
+class ImpurityBasedCluster:
+
+    def __init__(self, id, centroid):
+
+        self.id = id
+        self.centroid = centroid
+
+        self.number_of_labeled_samples = 0
+        self.samples_by_label = {}
+        self.unlabeled_samples = []
+
+        self.entropy = 0
+
+    def size(self):
+        return self.number_of_labeled_samples + len(self.unlabeled_samples)
+
+    def add_sample(self, sample):
+        if sample.y_true is not None:
+            if sample.y_true not in self.samples_by_label:
+                self.samples_by_label[sample.y_true] = []
+            self.samples_by_label[sample.y_true].append(sample)
+            self.number_of_labeled_samples += 1
+        else:
+            self.unlabeled_samples.append(sample)
+
+    def remove_sample(self, sample):
+        if sample.y_true is not None:
+            if sample.y_true in self.samples_by_label:
+                self.samples_by_label[sample.y_true].remove(sample)
+            self.number_of_labeled_samples -= 1
+        else:
+            self.unlabeled_samples.remove(sample)
+
+    def update_entropy(self):
+        label_probabilities = [self.calculate_label_probability(label) for label in self.samples_by_label]
+        self.entropy = -sum(p * math.log(p) for p in label_probabilities if p > 0)
+
+    def calculate_label_probability(self, label):
+        return len(self.samples_by_label[label]) / self.number_of_labeled_samples
+
+    def update_centroid(self):
+        samples = []
+        for label_samples in self.samples_by_label.values():
+            samples.extend([sample.point for sample in label_samples])
+        
+        samples.extend([sample.point for sample in self.unlabeled_samples])
+
+        linear_sum = np.sum(samples)
+        self.centroid = linear_sum / len(samples)
+
+    def distance_to_centroid(self, X):
+        """Returns distance from X to centroid of this cluster.
+
+        Parameters
+        ----------
+        X : numpy.ndarray
+            Point or multiple points
+
+        Returns
+        -------
+        numpy.ndarray
+            Distance from X to the microcluster's centroid
+        """
+
+        if len(X.shape) == 1:  # X is only one point
+            return np.linalg.norm(X - self.centroid)
+        else:  # X contains several points
+            return np.linalg.norm(X - self.centroid, axis=1)
+
+    def calculate_standard_deviation(self):
+        samples = []
+        for label_samples in self.samples_by_label.values():
+            samples.extend(label_samples)
+        samples.extend(self.unlabeled_samples)
+
+        centroid = self.get_centroid()
+        sum_of_squared_distances = sum((sample.distance(centroid) ** 2) for sample in samples)
+        return math.sqrt(sum_of_squared_distances / len(samples))
+
+    def calculate_radius(self):
+        samples = []
+        for label_samples in self.samples_by_label.values():
+            samples.extend(label_samples)
+        samples.extend(self.unlabeled_samples)
+
+        max_distance = max(samples, key=lambda sample: self.centroid.distance(sample))
+        return self.centroid.distance(max_distance)
+
+    def get_samples(self):
+        samples = []
+        for label_samples in self.samples_by_label.values():
+            samples.extend(label_samples)
+        samples.extend(self.unlabeled_samples)
+        return samples
+
+    def get_most_frequent_label(self):
+        return max(self.samples_by_label, key=lambda label: len(self.samples_by_label[label]))
+
+    def dissimilarity_count(self, labeled_sample):
+        if labeled_sample.y_true not in self.samples_by_label:
+            return self.number_of_labeled_samples
+        return self.number_of_labeled_samples - len(self.samples_by_label[labeled_sample.y_true])
+
 
 class ShortMemInstance:
     """Instance of a point associated with a timestamp. Used for the buffer memory which stores the unknown samples.

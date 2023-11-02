@@ -8,6 +8,7 @@ from river import base
 from sklearn.cluster import KMeans
 
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
+from streamndr.utils.cluster_utils import *
 
 __all__ = ["ECSMinerWF"]
 
@@ -29,8 +30,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
 
     Attributes
     ----------
-    MAX_MEMORY_SIZE : int
-        Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
     models : list of list of MicroCluster
         List containing the models created in the offline phase. In other words, it contains multiple lists of MicroClusters.
     novel_models : list of MicroCluster
@@ -49,7 +48,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         Whether or not the algorithm was initialized (offline phase). The algorithm needs to first be initialized to be used in an online fashion.
     """
 
-    MAX_MEMORY_SIZE = 50000
+
     
     def __init__(self,
                  K=50, 
@@ -166,7 +165,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         closest_model_cluster, y_preds = self._majority_voting(X)
         
         if len(self.novel_models) > 0: #We have novel clusters in our list
-            novel_closest_clusters, _ = self._get_closest_clusters(X, [microcluster.centroid for microcluster in self.novel_models])
+            novel_closest_clusters, _ = get_closest_clusters(X, [microcluster.centroid for microcluster in self.novel_models])
         
         pred_label = []
         for i in range(len(X)):
@@ -283,7 +282,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         dists = []
         
         for model in self.models:
-            closest_clusters_model, dist = self._get_closest_clusters(X, [microcluster.centroid for microcluster in model])
+            closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model])
             closest_clusters.append(closest_clusters_model)
             labels.append([model[closest_cluster].label for closest_cluster in closest_clusters_model])
             dists.append(dist) 
@@ -295,23 +294,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
             closest_model_cluster.append((best_models[i], closest_clusters[best_models[i]][i]))
             
         return closest_model_cluster, [Counter(col).most_common(1)[0][0] for col in zip(*labels)]
-        
-        
-    def _get_closest_clusters(self, X, centroids):   
-        
-        if len(centroids) == 0:
-            print("No clusters")
-            return
-            
-        centroids = np.array(centroids)
-        norm_dists = np.zeros((X.shape[0],centroids.shape[0]))
-
-        # Cut into batches if there are too many samples to save on memory
-        for idx in range(math.ceil(X.shape[0]/ECSMinerWF.MAX_MEMORY_SIZE)):
-            sl = slice(idx*ECSMinerWF.MAX_MEMORY_SIZE, (idx+1)*ECSMinerWF.MAX_MEMORY_SIZE)
-            norm_dists[sl] = np.linalg.norm(np.subtract(X[sl, :, None], np.transpose(centroids)), axis=1)
-
-        return np.argmin(norm_dists, axis=1), np.amin(norm_dists, axis=1)
         
     def _novelty_detect(self):
         if self.verbose > 0: print("Novelty detection started")
@@ -329,7 +311,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         potential_novel_clusters_idx = []
         #Computing qNSC for each model in our ensemble
         for model in self.models:
-            qnscs = self._qnsc(f_microclusters_centroids, model)
+            qnscs = qnsc(f_microclusters_centroids, model)
             
             potential_clusters = []
             total_instances = 0
@@ -361,7 +343,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         
         #Calculate minimum distance between points known cluster
         all_centroids = [microcluster.centroid for microcluster in model]
-        _, minimum_distances_to_class = self._get_closest_clusters(pseudopoints, all_centroids)
+        _, minimum_distances_to_class = get_closest_clusters(pseudopoints, all_centroids)
         
         qnscs = (minimum_distances_to_class - mean_distances_between_points) / np.maximum(minimum_distances_to_class, mean_distances_between_points)
         
@@ -376,6 +358,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
                     self.nb_class_unknown[y_true] -= 1
                 self.short_mem.pop(index)
             else: #No need to iterate over the whole buffer since older elements are at the beginning
-                break;
+                break
         
         
