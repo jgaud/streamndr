@@ -127,7 +127,7 @@ class Minas(base.MiniBatchClassifier):
         Returns
         -------
         Minas
-            Itself
+            Fitted estimator
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()

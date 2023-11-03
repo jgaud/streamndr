@@ -247,6 +247,25 @@ class MicroCluster(object):
         return self.n >= min_examples
     
 class ImpurityBasedCluster(MicroCluster):
+    """Cluster which implements the concept of entropy and dissimilarity if samples of a same class albel are not in the same cluster [1].
+
+    [1] Masud, Mohammad M., et al. "A practical approach to classify evolving data streams: Training with limited amount of labeled data." 
+    2008 Eighth IEEE International Conference on Data Mining. IEEE, 2008.
+
+    Parameters
+    ----------
+    label : int
+        Label of the cluster
+    centroid : numpy.ndarray
+        Current centroid of the cluster
+
+    Attributes
+    ----------
+    entropy : int
+        Entropy of the cluster as defined in [1]
+    number_of_labeled_samples : int
+        Number of labeled samples currently in the cluster
+    """
     def __init__(self,
                  label,
                  centroid):
@@ -260,6 +279,13 @@ class ImpurityBasedCluster(MicroCluster):
         self.number_of_labeled_samples = 0
 
     def add_sample(self, sample):
+        """Add a sample to the cluster, the sample can be labeled or not. Expects -1 as the label for an unlabeled sample.
+
+        Parameters
+        ----------
+        sample : ShortMemInstance
+            Instance to add to the cluster
+        """
 
         if sample.y_true not in self.samples_by_label:
             self.samples_by_label[sample.y_true] = 0
@@ -285,6 +311,13 @@ class ImpurityBasedCluster(MicroCluster):
         self.squared_sum = np.sum([self.squared_sum, np.square(X).sum()], axis=0)
 
     def remove_sample(self, sample):
+        """Remove a sample from the cluster, the sample can be labeled or not. Expects -1 as the label for an unlabeled sample.
+
+        Parameters
+        ----------
+        sample : ShortMemInstance
+            Instance to remove from the cluster
+        """
         self.samples_by_label[sample.y_true] -= 1
 
         if sample.y_true != -1:

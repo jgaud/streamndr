@@ -104,7 +104,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         Returns
         -------
         ECSMinerWF
-            Itself
+            Fitted estimator
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
@@ -119,7 +119,9 @@ class ECSMinerWF(base.MiniBatchClassifier):
             X_chunk = X[i:i+self.chunk_size]
             y_chunk = y[i:i+self.chunk_size]
             
-            self.models.append(self._generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm)) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
+            model = self._generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
+            if len(model) > 0:
+                self.models.append(model)
                     
         self.before_offline_phase = False
         
@@ -350,21 +352,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
         else:
             return None
         
-        
-    def _qnsc(self, pseudopoints, model):
-        #Calculate mean distance of all points between themselves
-        dists = np.linalg.norm(pseudopoints - pseudopoints[:,None], axis=-1)
-        dists[np.arange(dists.shape[0]), np.arange(dists.shape[0])] = np.nan
-        mean_distances_between_points = np.nanmean(dists, axis=0)
-        
-        #Calculate minimum distance between points known cluster
-        all_centroids = [microcluster.centroid for microcluster in model]
-        _, minimum_distances_to_class = get_closest_clusters(pseudopoints, all_centroids)
-        
-        qnscs = (minimum_distances_to_class - mean_distances_between_points) / np.maximum(minimum_distances_to_class, mean_distances_between_points)
-        
-        return qnscs
-    
     def _filter_buffer(self):
         for instance in self.short_mem:
             if (self.sample_counter - instance.timestamp > self.chunk_size): #We remove samples that have an age greater than the chunk size

@@ -57,7 +57,7 @@ Let's train our MINAS model on the offline (known) data.
 from streamndr.model import Minas
 clf = Minas(kini=10, cluster_algorithm='kmeans', 
             window_size=100, threshold_strategy=1, threshold_factor=1.1, 
-            min_short_mem_trigger=100, min_examples_cluster=50, verbose=1, random_state=42)
+            min_short_mem_trigger=50, min_examples_cluster=10, verbose=1, random_state=42)
 
 clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
 ```
@@ -92,17 +92,20 @@ print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
 
-|        | **-1** | **0** | **1** | **2** | **3** |
-|--------|--------|-------|-------|-------|-------|
-| **-1** | 0      | 0     | 0     | 0     | 0     |
-| **0**  | 722    | 341   | 33    | 10     | 44    |
-| **1**  | 1155   | 19     | 1296  | 58    | 4     |
-| **2**  | 386    | 7     | 19    | 312   | 0     |
-| **3**  | 172    | 1     | 0     | 0     | 421   |
+|        | **-1** | **0** | **1** | **2** | **3** | **4** | **5** | **6** |
+|--------|--------|-------|-------|-------|-------|-------|-------|-------|
+| **-1** | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
+| **0**  | 244    | 769   | 76    | 8     | 12    | 18     | 21     | 2     |
+| **1**  | 402   | 147     | 1819  | 62    | 36     | 35     | 28     | 3     |
+| **2**  | 104    | 59     | 246    | 74   | 221     | 9     | 8     | 3     |
+| **3**  | 25    | 190     | 2     | 0     | 0   | 0     | 377     | 0     |
+| **4**  | 0    | 0     | 0     | 0     | 0   | 0     | 0     | 0     |
+| **5**  | 0    | 0     | 0     | 0     | 0   | 0     | 0     | 0     |
+| **6**  | 0    | 0     | 0     | 0     | 0   | 0     | 0     | 0     |
 
-MNew: 2.05% <br/>
-FNew: 54.13% <br/>
-ErrRate: 41.44% <br/>
+MNew: 37.71% <br/>
+FNew: 23.66% <br/>
+ErrRate: 31.82% <br/>
 
 
 ### ECSMiner-WF

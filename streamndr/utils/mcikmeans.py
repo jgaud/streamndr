@@ -8,6 +8,33 @@ from streamndr.utils.cluster_utils import get_closest_clusters
 __all__ = ["MicroCluster", "ShortMemInstance"]
 
 class MCIKMeans():
+    """Implementation of K-Means with Minimization of Cluster Impurity (MCI-Kmeans), as described in [1].
+
+    This algorithm implements a semi-supervised version of K-Means, that aims to minimize the intra-cluster dispersion while also minimizing the impurity of each cluster.
+
+    [1] Masud, Mohammad M., et al. "A practical approach to classify evolving data streams: Training with limited amount of labeled data." 
+    2008 Eighth IEEE International Conference on Data Mining. IEEE, 2008.
+
+    Parameters
+    ----------
+    n_clusters : int
+        Number of clusters to generate
+    max_iter : int
+        Maximum number of iterations of the M-Step
+    conditional_mode_max_iter : int
+        Maximum number of iterations of the E-Step
+    random_state : int
+        Seed for the random number generation. Makes the algorithm deterministic if a number is provided.
+
+    Attributes
+    ----------
+    clusters : dict
+        Dictionary containing each cluster with their label as key
+    cluster_centers_ : numpy.ndarray
+        Array containing the coordinates of the cluster centers
+    labels_ : numpy.ndarray
+        Labels of each point
+    """
     def __init__(self,
                  n_clusters=8,
                  max_iter=300,
@@ -25,6 +52,20 @@ class MCIKMeans():
         self.clusters = {}
 
     def fit(self, X, y):
+        """Compute MCI-Kmeans clustering.
+
+        Parameters
+        ----------
+        X : numpy.ndarray
+            Samples
+        y : list of int
+            Labels of the samples, expects -1 if the label is not known
+
+        Returns
+        -------
+        MCIKmeans
+            Fitted estimator
+        """
         y = np.array(y)
 
         samples_per_class = {}
@@ -77,14 +118,6 @@ class MCIKMeans():
 
             iterations += 1
 
-        # to_delete = []
-        # for id, cluster in self.clusters.items():
-        #     if cluster.n < 2:
-        #         to_delete.append(id)
-
-        # for id in to_delete:
-        #     del self.clusters[id]
-
         self.cluster_centers_ = np.array([cluster.centroid for cluster in self.clusters.values()])
         self.labels_ = self.predict(X)
 
@@ -92,10 +125,38 @@ class MCIKMeans():
 
 
     def predict(self, X):
+        """Predict the closest cluster each sample in X belongs to.
+
+        Parameters
+        ----------
+        X : numpy.ndarray
+            Samples to predict
+
+        Returns
+        -------
+        numpy.ndarray
+            Index of the cluster each sample belongs to
+        """
         labels, _ = get_closest_clusters(X, [cluster.centroid for cluster in self.clusters.values()])
 
         return labels
+    
+    def fit_predict(self, X, y):
+        """Compute cluster centers and predict cluster index for each sample. Convenience method; equivalent to calling fit(X) followed by predict(X).
 
+        Parameters
+        ----------
+        X : numpy.ndarray
+            Samples
+        y : list of int
+            Labels of the samples, expects -1 if the label is not known
+
+        Returns
+        -------
+        numpy.ndarray
+            Index of the cluster each sample belongs to
+        """
+        return self.fit(X, y).labels_
 
     def _init_centroids(self, samples, numbers_of_centroids):
         centroids = []
