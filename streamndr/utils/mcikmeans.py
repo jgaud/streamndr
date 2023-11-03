@@ -59,9 +59,8 @@ class MCIKMeans():
                 filling_samples = copy.deepcopy(unlabeled_samples)
 
                 while ((len(centroids) < number_of_centroids[label]) and (len(filling_samples) > 0)):
-                    choice = random.choice(filling_samples)
+                    choice = filling_samples.pop(random.randrange(len(filling_samples)))
                     centroids.append(choice)
-                    filling_samples.remove(choice)
 
         for i in range(len(centroids)):
             self.clusters[i] = ImpurityBasedCluster(i, centroids[i])
@@ -105,8 +104,7 @@ class MCIKMeans():
         candidates = copy.deepcopy(samples).tolist()
 
         for i in range(numbers_of_centroids):
-            selected = random.choice(candidates)
-            candidates.remove(selected)
+            selected = candidates.pop(random.randrange(len(candidates)))
 
             centroids.append(selected)
 
@@ -134,12 +132,10 @@ class MCIKMeans():
                 sample = None
 
                 if (len(unlabeled_samples) == 0) or bool(random.getrandbits(1)):
-                    sample = random.choice(_labeled_samples)
-                    _labeled_samples.remove(sample)
+                    sample = _labeled_samples.pop(random.randrange(len(_labeled_samples)))
 
                 else:
-                    sample = random.choice(_unlabeled_samples)
-                    _unlabeled_samples.remove(sample)
+                    sample = _unlabeled_samples.pop(random.randrange(len(_unlabeled_samples)))
 
                 previous_cluster_id = sample.timestamp
 
@@ -150,7 +146,6 @@ class MCIKMeans():
                 
                 chosen_cluster = 0
                 min_dist = self._get_distance_value(sample, self.clusters[0], sample.y_true != None)
-
                 for i in range(1, len(self.clusters)):
                     if (self._get_distance_value(sample, self.clusters[i], sample.y_true != None)) < min_dist:
                         chosen_cluster = i

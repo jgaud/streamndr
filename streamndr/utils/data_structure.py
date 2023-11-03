@@ -248,6 +248,7 @@ class ImpurityBasedCluster:
         self.number_of_labeled_samples = 0
         self.samples_by_label = {}
         self.unlabeled_samples = []
+        self.all_points = []
 
         self.entropy = 0
 
@@ -263,6 +264,8 @@ class ImpurityBasedCluster:
         else:
             self.unlabeled_samples.append(sample)
 
+        self.all_points.append(sample.point)
+
     def remove_sample(self, sample):
         if sample.y_true is not None:
             if sample.y_true in self.samples_by_label:
@@ -270,6 +273,8 @@ class ImpurityBasedCluster:
             self.number_of_labeled_samples -= 1
         else:
             self.unlabeled_samples.remove(sample)
+
+        self.all_points.remove(sample.point)
 
     def update_entropy(self):
         label_probabilities = [self.calculate_label_probability(label) for label in self.samples_by_label]
@@ -279,14 +284,8 @@ class ImpurityBasedCluster:
         return len(self.samples_by_label[label]) / self.number_of_labeled_samples
 
     def update_centroid(self):
-        samples = []
-        for label_samples in self.samples_by_label.values():
-            samples.extend([sample.point for sample in label_samples])
-        
-        samples.extend([sample.point for sample in self.unlabeled_samples])
-
-        linear_sum = np.sum(samples, axis=0)
-        self.centroid = linear_sum / len(samples)
+        linear_sum = np.sum(self.all_points, axis=0)
+        self.centroid = linear_sum / len(self.all_points)
 
     def distance_to_centroid(self, X):
         """Returns distance from X to centroid of this cluster.
@@ -308,22 +307,12 @@ class ImpurityBasedCluster:
             return np.linalg.norm(X - self.centroid, axis=1)
 
     def calculate_standard_deviation(self):
-        samples = []
-        for label_samples in self.samples_by_label.values():
-            samples.extend(label_samples)
-        samples.extend(self.unlabeled_samples)
-
         centroid = self.get_centroid()
-        sum_of_squared_distances = sum((sample.distance(centroid) ** 2) for sample in samples)
-        return math.sqrt(sum_of_squared_distances / len(samples))
+        sum_of_squared_distances = sum((sample.distance(centroid) ** 2) for sample in self.all_points)
+        return math.sqrt(sum_of_squared_distances / len(self.all_points))
 
     def calculate_radius(self):
-        samples = []
-        for label_samples in self.samples_by_label.values():
-            samples.extend(label_samples)
-        samples.extend(self.unlabeled_samples)
-
-        max_distance = max(samples, key=lambda sample: self.centroid.distance(sample))
+        max_distance = max(self.all_points, key=lambda sample: self.centroid.distance(sample))
         return self.centroid.distance(max_distance)
 
     def get_samples(self):
