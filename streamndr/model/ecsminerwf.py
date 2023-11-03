@@ -7,6 +7,7 @@ from river import base
 
 from sklearn.cluster import KMeans
 
+from streamndr.utils.mcikmeans import MCIKMeans
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
 from streamndr.utils.cluster_utils import *
 
@@ -27,6 +28,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
         Controls the level of verbosity, the higher, the more messages are displayed. Can be '1', '2', or '3'.
     random_state : int
         Seed for the random number generation. Makes the algorithm deterministic if a number is provided.
+    init_algorithm : string
+        String containing the clustering algorithm to use to initialize the clusters, supports 'kmeans' and 'mcikmeans'
 
     Attributes
     ----------
@@ -55,7 +58,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
                  min_examples_cluster=50, #Number of instances requried to declare a novel class 
                  ensemble_size=6, 
                  verbose=0,
-                 random_state=None):
+                 random_state=None,
+                 init_algorithm="mcikmeans"):
         
         super().__init__()
         self.K = K
@@ -63,6 +67,12 @@ class ECSMinerWF(base.MiniBatchClassifier):
         self.ensemble_size = ensemble_size
         self.verbose = verbose
         self.random_state = random_state
+
+        accepted_algos = ['kmeans','mcikmeans']
+        if init_algorithm not in accepted_algos:
+            print('Available algorithms: {}'.format(', '.join(accepted_algos)))
+        else:
+            self.init_algorithm = init_algorithm
 
         self.models = []
         self.novel_models = []
@@ -109,7 +119,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
             X_chunk = X[i:i+self.chunk_size]
             y_chunk = y[i:i+self.chunk_size]
             
-            self.models.append(self._generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3)) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
+            self.models.append(self._generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm)) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
                     
         self.before_offline_phase = False
         
@@ -258,8 +268,13 @@ class ECSMinerWF(base.MiniBatchClassifier):
         #It is only added as to follow River's API.
         pass
     
-    def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0):
-        clf = KMeans(n_clusters=K, random_state=self.random_state).fit(X)
+    def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0, algorithm="kmeans"):
+
+        if algorithm == "kmeans":
+            clf = KMeans(n_clusters=K, n_init="auto", random_state=self.random_state).fit(X)
+        else:
+            clf = MCIKMeans(n_clusters=K, random_state=self.random_state).fit(X, y)
+            
         labels = clf.labels_
 
         microclusters = []
@@ -302,8 +317,9 @@ class ECSMinerWF(base.MiniBatchClassifier):
         new_class_vote = 0
         
         #Creating F-pseudopoints
-        K0 = math.ceil(self.K * (len(X) / self.chunk_size))
-        K0 = max(K0, self.K)
+        K0 = round(self.K * (len(X) / self.chunk_size))
+        K0 = min(K0, len(X)) #Can't create K clusters if K is higher than the number of samples
+
         
         f_microclusters = self._generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True)
         f_microclusters_centroids = np.array([cl.centroid for cl in f_microclusters])

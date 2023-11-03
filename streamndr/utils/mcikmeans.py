@@ -77,15 +77,18 @@ class MCIKMeans():
 
             iterations += 1
 
-        to_delete = []
-        for id, cluster in self.clusters.items():
-            if cluster.n < 2:
-                to_delete.append(id)
+        # to_delete = []
+        # for id, cluster in self.clusters.items():
+        #     if cluster.n < 2:
+        #         to_delete.append(id)
 
-        for id in to_delete:
-            del self.clusters[id]
+        # for id in to_delete:
+        #     del self.clusters[id]
 
         self.cluster_centers_ = np.array([cluster.centroid for cluster in self.clusters.values()])
+        self.labels_ = self.predict(X)
+
+        return self
 
 
     def predict(self, X):
@@ -99,7 +102,7 @@ class MCIKMeans():
 
         if len(samples) <= numbers_of_centroids:
             centroids.extend(samples)
-            return
+            return centroids
 
         candidates = copy.deepcopy(samples).tolist()
 
@@ -131,7 +134,7 @@ class MCIKMeans():
             for i in range(total_nb_samples):
                 sample = None
 
-                if (len(unlabeled_samples) == 0) or bool(random.getrandbits(1)):
+                if (len(_labeled_samples) > 0) and ((len(unlabeled_samples) == 0) or bool(random.getrandbits(1))):
                     sample = _labeled_samples.pop(random.randrange(len(_labeled_samples)))
 
                 else:
@@ -144,11 +147,13 @@ class MCIKMeans():
                     sample.timestamp = None
 
                 
-                chosen_cluster = 0
-                min_dist = self._get_distance_value(sample, self.clusters[0], sample.y_true != -1)
-                for i in range(1, len(self.clusters)):
-                    if (self._get_distance_value(sample, self.clusters[i], sample.y_true != -1)) < min_dist:
-                        chosen_cluster = i
+                iterator = iter(self.clusters.items())
+                chosen_cluster, _ = next(iterator)
+                min_dist = self._get_distance_value(sample, self.clusters[chosen_cluster], sample.y_true != -1)
+
+                for key, _ in iterator:
+                    if (self._get_distance_value(sample, self.clusters[key], sample.y_true != -1)) < min_dist:
+                        chosen_cluster = key
 
                 self.clusters[chosen_cluster].add_sample(sample)
                 sample.timestamp = self.clusters[chosen_cluster].label
