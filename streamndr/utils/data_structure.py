@@ -44,21 +44,30 @@ class MicroCluster(object):
         # TODO: remove instances entirely so it doesn't need to be stored in memory; Might not be possible because of _best_threshold used by MINAS which needs instances
         super(MicroCluster, self).__init__()
         self.label = label
+
         self.instances = instances
-
-        self.n = len(instances)
-        self.linear_sum = instances.sum(axis=0)
         
-        # Sum of the squared l2 norms of all samples belonging to a microcluster:
-        self.squared_sum = np.square(np.linalg.norm(self.instances, axis=1)).sum()
-        # self.squared_sum = np.square(instances).sum(axis=0)  # From CluSTREAM paper
+        if instances is not None:
+            self.n = len(instances)
+            self.linear_sum = instances.sum(axis=0)
+        
+            # Sum of the squared l2 norms of all samples belonging to a microcluster:
+            self.squared_sum = np.square(np.linalg.norm(self.instances, axis=1)).sum()
+            # self.squared_sum = np.square(instances).sum(axis=0)  # From CluSTREAM paper
+            self.centroid = self.linear_sum / self.n
+            self.max_distance = np.max(self.distance_to_centroid(instances))
+            self.mean_distance = np.mean(self.distance_to_centroid(instances))
+            self.update_properties()
 
-        self.centroid = self.linear_sum / self.n
-        self.max_distance = np.max(self.distance_to_centroid(instances))
-        self.mean_distance = np.mean(self.distance_to_centroid(instances))
+        else:
+            self.n = 0
+            self.linear_sum = 0
+            self.squared_sum = 0
+            self.max_distance = 0
+            self.mean_distance = 0
+
         self.timestamp = timestamp
-
-        self.update_properties()
+        
 
         if not keep_instances:
             self.instances = None
@@ -125,7 +134,6 @@ class MicroCluster(object):
         numpy.ndarray
             Distance from X to the microcluster's centroid
         """
-
         if len(X.shape) == 1:  # X is only one point
             return np.linalg.norm(X - self.centroid)
         else:  # X contains several points
@@ -182,6 +190,7 @@ class MicroCluster(object):
         if self.instances is not None:
             self.instances = np.append(self.instances, [X],
                                        axis=0)
+            
         if update_summary:
             self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n + 1)
             self.n += 1
@@ -192,10 +201,9 @@ class MicroCluster(object):
     def update_properties(self):
         """Updates centroid and radius based on current cluster properties."""
         self.centroid = self.linear_sum / self.n
-        
+
         if self.instances is not None:
             self.radius = self.get_radius()
-
             if np.max(self.distance_to_centroid(self.instances)) > self.max_distance:
                 self.max_distance = np.max(self.distance_to_centroid(self.instances))
 
@@ -237,99 +245,73 @@ class MicroCluster(object):
             If the cluster is representative or not
         """
         return self.n >= min_examples
+    
+class ImpurityBasedCluster(MicroCluster):
+    def __init__(self,
+                 label,
+                 centroid):
+        
+        super().__init__(label)
 
-class ImpurityBasedCluster:
-
-    def __init__(self, id, centroid):
-
-        self.id = id
         self.centroid = centroid
-
-        self.number_of_labeled_samples = 0
         self.samples_by_label = {}
-        self.unlabeled_samples = []
-        self.all_points = []
 
         self.entropy = 0
-
-    def size(self):
-        return self.number_of_labeled_samples + len(self.unlabeled_samples)
+        self.number_of_labeled_samples = 0
 
     def add_sample(self, sample):
-        if sample.y_true is not None:
-            if sample.y_true not in self.samples_by_label:
-                self.samples_by_label[sample.y_true] = []
-            self.samples_by_label[sample.y_true].append(sample)
-            self.number_of_labeled_samples += 1
-        else:
-            self.unlabeled_samples.append(sample)
 
-        self.all_points.append(sample.point)
+        if sample.y_true not in self.samples_by_label:
+            self.samples_by_label[sample.y_true] = 0
+
+        
+        self.samples_by_label[sample.y_true] += 1
+
+
+        if sample.y_true != -1:
+            self.number_of_labeled_samples += 1
+
+        X = sample.point
+        if self.instances is not None:
+            self.instances = np.append(self.instances, [sample.point],
+                                       axis=0)
+            self.linear_sum = np.sum([self.linear_sum, X], axis=0)
+        else:
+            self.instances = np.array([sample.point])
+            self.linear_sum = X
+        
+        self.n += 1
+        self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n)
+        self.squared_sum = np.sum([self.squared_sum, np.square(X).sum()], axis=0)
 
     def remove_sample(self, sample):
-        if sample.y_true is not None:
-            if sample.y_true in self.samples_by_label:
-                self.samples_by_label[sample.y_true].remove(sample)
-            self.number_of_labeled_samples -= 1
-        else:
-            self.unlabeled_samples.remove(sample)
+        self.samples_by_label[sample.y_true] -= 1
 
-        self.all_points.remove(sample.point)
+        if sample.y_true != -1:
+            self.number_of_labeled_samples -= 1
+
+        self.instances.remove(sample.point)
+        self.n -= 1
+
+        X = sample.point
+        self.mean_distance = (self.n * self.mean_distance - self.distance_to_centroid(X)) / (self.n)
+        self.linear_sum = np.sum([self.linear_sum, -1*X], axis=0)
+        self.squared_sum = np.sum([self.squared_sum, -1*np.square(X).sum()], axis=0)
 
     def update_entropy(self):
-        label_probabilities = [self.calculate_label_probability(label) for label in self.samples_by_label]
+        label_probabilities = [self.calculate_label_probability(label) for label in self.samples_by_label if label != -1]
         self.entropy = -sum(p * math.log(p) for p in label_probabilities if p > 0)
 
     def calculate_label_probability(self, label):
-        return len(self.samples_by_label[label]) / self.number_of_labeled_samples
-
-    def update_centroid(self):
-        linear_sum = np.sum(self.all_points, axis=0)
-        self.centroid = linear_sum / len(self.all_points)
-
-    def distance_to_centroid(self, X):
-        """Returns distance from X to centroid of this cluster.
-
-        Parameters
-        ----------
-        X : numpy.ndarray
-            Point or multiple points
-
-        Returns
-        -------
-        numpy.ndarray
-            Distance from X to the microcluster's centroid
-        """
-
-        if len(X.shape) == 1:  # X is only one point
-            return np.linalg.norm(X - self.centroid)
-        else:  # X contains several points
-            return np.linalg.norm(X - self.centroid, axis=1)
-
-    def calculate_standard_deviation(self):
-        centroid = self.get_centroid()
-        sum_of_squared_distances = sum((sample.distance(centroid) ** 2) for sample in self.all_points)
-        return math.sqrt(sum_of_squared_distances / len(self.all_points))
-
-    def calculate_radius(self):
-        max_distance = max(self.all_points, key=lambda sample: self.centroid.distance(sample))
-        return self.centroid.distance(max_distance)
-
-    def get_samples(self):
-        samples = []
-        for label_samples in self.samples_by_label.values():
-            samples.extend(label_samples)
-        samples.extend(self.unlabeled_samples)
-        return samples
-
-    def get_most_frequent_label(self):
-        return max(self.samples_by_label, key=lambda label: len(self.samples_by_label[label]))
-
+        return self.samples_by_label[label] / self.number_of_labeled_samples
+    
     def dissimilarity_count(self, labeled_sample):
         if labeled_sample.y_true not in self.samples_by_label:
             return self.number_of_labeled_samples
-        return self.number_of_labeled_samples - len(self.samples_by_label[labeled_sample.y_true])
-
+        if labeled_sample.y_true == -1:
+            return 0
+        
+        return self.number_of_labeled_samples - self.samples_by_label[labeled_sample.y_true]
 
 class ShortMemInstance:
     """Instance of a point associated with a timestamp. Used for the buffer memory which stores the unknown samples.

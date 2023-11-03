@@ -72,14 +72,14 @@ class MCIKMeans():
             changing = self._iterative_conditional_mode(samples_per_class, unlabeled_samples)
 
             for cluster in self.clusters.values():
-                if cluster.size() > 0:
-                    cluster.update_centroid()
+                if cluster.n > 0:
+                    cluster.update_properties()
 
             iterations += 1
 
         to_delete = []
         for id, cluster in self.clusters.items():
-            if cluster.size() < 2:
+            if cluster.n < 2:
                 to_delete.append(id)
 
         for id in to_delete:
@@ -116,7 +116,7 @@ class MCIKMeans():
         for key, value in samples_per_class.items():
             _labeled_samples.extend([ShortMemInstance(x, None, key) for x in value])
 
-        _unlabeled_samples = [ShortMemInstance(x, None, None) for x in unlabeled_samples]
+        _unlabeled_samples = [ShortMemInstance(x, None, -1) for x in unlabeled_samples]
 
         iterations = 0
         changed = True
@@ -145,17 +145,17 @@ class MCIKMeans():
 
                 
                 chosen_cluster = 0
-                min_dist = self._get_distance_value(sample, self.clusters[0], sample.y_true != None)
+                min_dist = self._get_distance_value(sample, self.clusters[0], sample.y_true != -1)
                 for i in range(1, len(self.clusters)):
-                    if (self._get_distance_value(sample, self.clusters[i], sample.y_true != None)) < min_dist:
+                    if (self._get_distance_value(sample, self.clusters[i], sample.y_true != -1)) < min_dist:
                         chosen_cluster = i
 
                 self.clusters[chosen_cluster].add_sample(sample)
-                sample.timestamp = self.clusters[chosen_cluster].id
+                sample.timestamp = self.clusters[chosen_cluster].label
 
                 self.clusters[chosen_cluster].update_entropy()
 
-                if self.clusters[chosen_cluster].id != previous_cluster_id:
+                if self.clusters[chosen_cluster].label != previous_cluster_id:
                     changed = True
                     no_change = False
 
