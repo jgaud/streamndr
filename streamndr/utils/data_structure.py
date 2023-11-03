@@ -285,7 +285,7 @@ class ImpurityBasedCluster:
         
         samples.extend([sample.point for sample in self.unlabeled_samples])
 
-        linear_sum = np.sum(samples)
+        linear_sum = np.sum(samples, axis=0)
         self.centroid = linear_sum / len(samples)
 
     def distance_to_centroid(self, X):

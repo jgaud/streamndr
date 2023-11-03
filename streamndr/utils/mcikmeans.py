@@ -22,7 +22,6 @@ class MCIKMeans():
         if random_state != None:
             random.seed(random_state)
 
-        self.centroids = []
         self.clusters = {}
 
     def fit(self, X, y):
@@ -52,19 +51,20 @@ class MCIKMeans():
 
             remaining -= 1
 
+        centroids = []
         for label in samples_per_class:
-            self._init_centroids(samples_per_class[label], number_of_centroids[label])
+            centroids.extend(self._init_centroids(samples_per_class[label], number_of_centroids[label]))
 
-            if (len(self.centroids) < number_of_centroids[label]) and (len(unlabeled_samples) > 0):
+            if (len(centroids) < number_of_centroids[label]) and (len(unlabeled_samples) > 0):
                 filling_samples = copy.deepcopy(unlabeled_samples)
 
-                while ((len(self.centroids) < number_of_centroids[label]) and (len(filling_samples) > 0)):
+                while ((len(centroids) < number_of_centroids[label]) and (len(filling_samples) > 0)):
                     choice = random.choice(filling_samples)
-                    self.centroids.append(choice)
+                    centroids.append(choice)
                     filling_samples.remove(choice)
 
-        for i in range(len(self.centroids)):
-            self.clusters[i] = ImpurityBasedCluster(i, self.centroids[i])
+        for i in range(len(centroids)):
+            self.clusters[i] = ImpurityBasedCluster(i, centroids[i])
 
         iterations = 0
         changing = True
@@ -86,6 +86,8 @@ class MCIKMeans():
         for id in to_delete:
             del self.clusters[id]
 
+        self.cluster_centers_ = np.array([cluster.centroid for cluster in self.clusters.values()])
+
 
     def predict(self, X):
         labels, _ = get_closest_clusters(X, [cluster.centroid for cluster in self.clusters.values()])
@@ -94,8 +96,10 @@ class MCIKMeans():
 
 
     def _init_centroids(self, samples, numbers_of_centroids):
+        centroids = []
+
         if len(samples) <= numbers_of_centroids:
-            self.centroids.extend(samples)
+            centroids.extend(samples)
             return
 
         candidates = copy.deepcopy(samples).tolist()
@@ -104,7 +108,9 @@ class MCIKMeans():
             selected = random.choice(candidates)
             candidates.remove(selected)
 
-            self.centroids.append(selected)
+            centroids.append(selected)
+
+        return centroids
 
     def _iterative_conditional_mode(self, samples_per_class, unlabeled_samples):
         
