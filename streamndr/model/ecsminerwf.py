@@ -313,8 +313,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
         return closest_model_cluster, [Counter(col).most_common(1)[0][0] for col in zip(*labels)]
         
     def _novelty_detect(self):
-        if self.verbose > 0: print("Novelty detection started")
-        
+        if self.verbose > 1: print("Novelty detection started")
         X = np.array([instance.point for instance in self.short_mem])
         new_class_vote = 0
         
@@ -329,8 +328,8 @@ class ECSMinerWF(base.MiniBatchClassifier):
         potential_novel_clusters_idx = []
         #Computing qNSC for each model in our ensemble
         for model in self.models:
-            qnscs = qnsc(f_microclusters_centroids, model)
-            
+            qnscs = qnsc(f_microclusters_centroids, model, self.min_examples_cluster)
+
             potential_clusters = []
             total_instances = 0
             for i, f_microcluster in enumerate(f_microclusters):
@@ -338,10 +337,11 @@ class ECSMinerWF(base.MiniBatchClassifier):
                     potential_clusters.append(f_microcluster)
                     total_instances += f_microcluster.n
                     potential_novel_clusters_idx.append(i)
+            if total_instances > 0 and self.verbose > 1:
+                print(f"Total instances in F-outliers: {total_instances}")
             
             if total_instances > self.min_examples_cluster: new_class_vote += 1
-                    
-        
+
         if new_class_vote == len(self.models):
             #Get the indices of all clusters which had a positive qnsc for all models
             novel_clusters_idx = [item for item, count in Counter(potential_novel_clusters_idx).items() if count == len(self.models)]

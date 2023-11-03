@@ -37,33 +37,41 @@ def get_closest_clusters(X, centroids):
 
     return np.argmin(norm_dists, axis=1), np.amin(norm_dists, axis=1)
 
-def qnsc(pseudopoints, model):
-    """Computes the q-neighborhood silhouette coefficient, as described in [1].
+def qnsc(pseudopoints, model, q_p=5):
+    qnscs = []
+    cluster_by_label = {}
 
-    [1] Masud, Mohammad, et al. "Classification and novel class detection in concept-drifting data streams under time constraints." 
-    IEEE Transactions on knowledge and data engineering 23.6 (2010): 859-874.
+    for cluster in model:
+        if cluster.label not in cluster_by_label:
+            cluster_by_label[cluster.label] = []
 
-    Parameters
-    ----------
-    pseudopoints : numpy.ndarray
-        List of points
-    model : list of MicroCluster
-        Microclusters representing a model
+        cluster_by_label[cluster.label].append(cluster.centroid)
 
-    Returns
-    -------
-    numpy.ndarray
-        List of computed qnscs for each point
-    """
-    #Calculate mean distance of all points between themselves
-    dists = np.linalg.norm(pseudopoints - pseudopoints[:,None], axis=-1)
-    dists[np.arange(dists.shape[0]), np.arange(dists.shape[0])] = np.nan
-    mean_distances_between_points = np.nanmean(dists, axis=0)
-    
-    #Calculate minimum distance between points known cluster
-    all_centroids = [microcluster.centroid for microcluster in model]
-    _, minimum_distances_to_class = get_closest_clusters(pseudopoints, all_centroids)
-    
-    qnscs = (minimum_distances_to_class - mean_distances_between_points) / np.maximum(minimum_distances_to_class, mean_distances_between_points)
-    
+    for i, point in enumerate(pseudopoints):
+        dists = []
+        for j, point2 in enumerate(pseudopoints):
+            if i != j:
+                dists.append(np.linalg.norm(point-point2))
+
+        q = min(q_p, len(dists))
+        q_closest = np.partition(dists, q-1)[:q]
+
+        dc_out = np.sum(q_closest)/q
+
+        dc_q = []
+        for _, clusters in cluster_by_label.items():
+            dists = []
+            for centroid in clusters:
+                dists.append(np.linalg.norm(point-centroid))
+            
+            q = min(q_p, len(dists))
+            q_closest = np.partition(dists, q-1)[:q]
+            dc_q.append(np.sum(q_closest)/q)
+
+        dcmin_q = np.min(dc_q)
+
+
+        qnsc = (dcmin_q - dc_out) / max(dcmin_q, dc_out)
+        
+        qnscs.append(qnsc)
     return qnscs
