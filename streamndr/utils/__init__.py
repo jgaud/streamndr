@@ -8,4 +8,5 @@ __all__ = [
     "MCIKMeans",
     "MicroCluster",
     "ShortMemInstance",
+    "ClusterModel",
 ]

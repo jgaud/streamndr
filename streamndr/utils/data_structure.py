@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-__all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster"]
+__all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster", "ClusterModel"]
 
 class MicroCluster(object):
     """A representation of a cluster with compressed information.
@@ -379,3 +379,17 @@ class ShortMemInstance:
         """
         if type(other) == np.ndarray:
             return np.all(self.point == other)
+        
+class ClusterModel:
+    """Data class which represent a model containing a list of microclusters and a list of labels which it was trained on
+
+    Attributes
+    ----------
+    microclusters : list of MicroCluster
+        List of MicroClusters representing the model
+    timestamp : list of int
+        List of labels on which the model was trained on
+    """
+    def __init__(self, microclusters, labels):
+        self.microclusters = microclusters
+        self.labels = labels
