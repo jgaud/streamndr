@@ -196,7 +196,7 @@ class ECSMinerWF(base.MiniBatchClassifier):
                 pred_label.append(y_preds[i])
                 closest_cluster.update_cluster(X[i], self.sample_counter, False)
                 
-            elif (len(self.novel_models) > 0) and (self.novel_models[novel_closest_clusters[i]].distance_to_centroid(X[i]) <= closest_cluster.max_distance): #One of our novel cluster can explain our sample
+            elif (len(self.novel_models) > 0) and (self.novel_models[novel_closest_clusters[i]].distance_to_centroid(X[i]) <= self.novel_models[novel_closest_clusters[i]].max_distance): #One of our novel cluster can explain our sample
                 pred_label.append(self.novel_models[novel_closest_clusters[i]].label)
                 self.novel_models[novel_closest_clusters[i]].update_cluster(X[i], self.sample_counter, False)
                 
@@ -271,7 +271,9 @@ class ECSMinerWF(base.MiniBatchClassifier):
         pass
     
     def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0, algorithm="kmeans"):
-
+        if K == 0:
+            return []
+        
         if algorithm == "kmeans":
             clf = KMeans(n_clusters=K, n_init="auto", random_state=self.random_state).fit(X)
         else:
@@ -329,7 +331,6 @@ class ECSMinerWF(base.MiniBatchClassifier):
         #Computing qNSC for each model in our ensemble
         for model in self.models:
             qnscs = qnsc(f_microclusters_centroids, model, self.min_examples_cluster)
-
             potential_clusters = []
             total_instances = 0
             for i, f_microcluster in enumerate(f_microclusters):

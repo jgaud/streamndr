@@ -25,7 +25,7 @@ def get_closest_clusters(X, centroids):
     """
     if len(centroids) == 0:
         print("No clusters")
-        return
+        return np.full(len(X), -1)
         
     centroids = np.array(centroids)
     norm_dists = np.zeros((X.shape[0],centroids.shape[0]))
@@ -38,6 +38,25 @@ def get_closest_clusters(X, centroids):
     return np.argmin(norm_dists, axis=1), np.amin(norm_dists, axis=1)
 
 def qnsc(pseudopoints, model, q_p=5):
+    """Computes the q-neighborhood silhouette coefficient, as described in [1].
+
+    [1] Masud, Mohammad, et al. "Classification and novel class detection in concept-drifting data streams under time constraints." 
+    IEEE Transactions on knowledge and data engineering 23.6 (2010): 859-874.
+
+    Parameters
+    ----------
+    pseudopoints : numpy.ndarray
+        List of points
+    model : list of MicroCluster
+        Microclusters representing a model
+    q_p : int
+        XXXXX
+
+    Returns
+    -------
+    numpy.ndarray
+        List of computed qnscs for each point
+    """
     qnscs = []
     cluster_by_label = {}
 
@@ -54,6 +73,7 @@ def qnsc(pseudopoints, model, q_p=5):
                 dists.append(np.linalg.norm(point-point2))
 
         q = min(q_p, len(dists))
+
         q_closest = np.partition(dists, q-1)[:q]
 
         dc_out = np.sum(q_closest)/q
@@ -74,4 +94,6 @@ def qnsc(pseudopoints, model, q_p=5):
         qnsc = (dcmin_q - dc_out) / max(dcmin_q, dc_out)
         
         qnscs.append(qnsc)
+
+        
     return qnscs
