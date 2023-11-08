@@ -383,6 +383,22 @@ class ECSMiner(base.MiniBatchClassifier):
         
         #From all the closest microclusters of each model, get the index of the closest model for each X
         best_models = np.argmin(dists, axis=0)
+
+        #Check if younger classifier classifies as new class C and older classifier wasn't trained on C
+        # Transpose the list of lists to work with columns
+        for k in range(len(X)):
+            for i in range(len(self.models)-1, 0, -1):
+                for j in range(0, i):
+                    if not labels[i][k] in self.models[j].labels: #If the label predicted by new classifier i was not in training sample of older classifier j
+                        #Check if the point is an outlier of model j
+                        outlier = True
+                        for microcluster in self.models[j].microclusters:
+                            if microcluster.distance_to_centroid(X[k]) <= microcluster.max_distance:
+                                outlier = False
+                                break
+                        #If the point is an outlier of classifier j, don't consider its label
+                        if outlier:
+                            labels[j][k] = -1
         
         #Finally, create a list of tuples, which contain the index of the closest model and the index of the closest microcluster within that model for each X
         closest_model_cluster = []
@@ -390,8 +406,8 @@ class ECSMiner(base.MiniBatchClassifier):
             closest_model_cluster.append((best_models[i], closest_clusters[best_models[i]][i]))
 
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
-        # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X.   
-        return closest_model_cluster, [Counter(col).most_common(1)[0][0] for col in zip(*labels)]
+        # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
+        return closest_model_cluster, self._get_most_occuring_by_column(labels)
         
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")
@@ -443,6 +459,25 @@ class ECSMiner(base.MiniBatchClassifier):
                 or (closest_cluster.distance_to_centroid(instance.point) <= closest_cluster.max_distance)): #The instance is no longer an F-outlier 
 
                 self._remove_sample_from_short_mem(self.short_mem.index(instance))
+
+    def _get_most_occuring_by_column(self, l):
+        most_common_values = {}
+        for col in zip(*l):
+            #Use a Counter to count the occurrences of each value in the column while ignoring -1 since it is a label we want to ignore
+            counts = Counter(val for val in col if val != -1)
+            
+            #Find the most common value in the Counter
+            most_common_value = counts.most_common(1)
+            
+            #If there are no valid values in the column, set the most_common_value to -1
+            if not most_common_value:
+                most_common_value = -1
+            else:
+                most_common_value = most_common_value[0][0]
+
+            most_common_values[len(most_common_values)] = most_common_value
+
+        return [most_common_values[i] for i in range(len(most_common_values))]
 
     def _remove_sample_from_short_mem(self, index):
         y_true = self.short_mem[index].y_true
