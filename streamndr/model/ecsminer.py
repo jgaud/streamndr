@@ -385,7 +385,6 @@ class ECSMiner(base.MiniBatchClassifier):
         best_models = np.argmin(dists, axis=0)
 
         #Check if younger classifier classifies as new class C and older classifier wasn't trained on C
-        # Transpose the list of lists to work with columns
         for k in range(len(X)):
             for i in range(len(self.models)-1, 0, -1):
                 for j in range(0, i):
@@ -416,6 +415,7 @@ class ECSMiner(base.MiniBatchClassifier):
         
         #Creating F-pseudopoints representing all F-outliers to speedup computation of qnsc
         K0 = round(self.K * (len(X) / self.chunk_size))
+        K0 = max(K0, self.K)
         K0 = min(K0, len(X)) #Can't create K clusters if K is higher than the number of samples
 
         f_microclusters = self._generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True, min_samples=0, algorithm="kmeans")

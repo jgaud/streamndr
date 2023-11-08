@@ -66,18 +66,21 @@ def qnsc(pseudopoints, model, q_p=5):
 
         cluster_by_label[cluster.label].append(cluster.centroid)
 
+    
+    #1 - Find the Q closest distances for each point
+    distances = np.linalg.norm(pseudopoints[:, np.newaxis] - pseudopoints, axis=2)
+
+    # Set the diagonal elements to a large value to avoid selecting the same point
+    np.fill_diagonal(distances, np.inf)
+    indices = np.argpartition(distances, min(q_p, pseudopoints.size-1), axis=1)[:, :q_p]
+
+    # Retrieve the Q minimum distances for each point
+    min_distances = np.take_along_axis(distances, indices, axis=1)
+    dc_outs = np.mean(min_distances, axis=1)
+    
     for i, point in enumerate(pseudopoints):
-        dists = []
-        for j, point2 in enumerate(pseudopoints):
-            if i != j:
-                dists.append(np.linalg.norm(point-point2))
-
-        q = min(q_p, len(dists))
-
-        q_closest = np.partition(dists, q-1)[:q]
-
-        dc_out = np.sum(q_closest)/q
-
+        dc_out = dc_outs[i]
+    
         dc_q = []
         for _, clusters in cluster_by_label.items():
             dists = []
