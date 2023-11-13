@@ -11,7 +11,7 @@ class MicroCluster(object):
     label : int
         Label associated with this microcluster
     instances : numpy.ndarray
-        Instances in this microcluster, preferably these would not be stored if not needed using keep_instances=False
+        Instances in this microcluster, preferably these would not be stored if not needed using keep_instances=False. Will be converted to Python list for append performance.
     timestamp : int
         Timestamp this microcluster was last updated, used for forgetting mechanisms  
     keep_instances : bool
@@ -45,9 +45,8 @@ class MicroCluster(object):
         super(MicroCluster, self).__init__()
         self.label = label
 
-        self.instances = instances
-        
         if instances is not None:
+            self.instances = instances.tolist()
             self.n = len(instances)
             self.linear_sum = instances.sum(axis=0)
         
@@ -126,7 +125,7 @@ class MicroCluster(object):
 
         Parameters
         ----------
-        X : numpy.ndarray
+        X : numpy.ndarray or list
             Point or multiple points
 
         Returns
@@ -134,6 +133,9 @@ class MicroCluster(object):
         numpy.ndarray
             Distance from X to the microcluster's centroid
         """
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+
         if len(X.shape) == 1:  # X is only one point
             return np.linalg.norm(X - self.centroid)
         else:  # X contains several points
@@ -188,8 +190,7 @@ class MicroCluster(object):
         self.timestamp = timestamp
         
         if self.instances is not None:
-            self.instances = np.append(self.instances, [X],
-                                       axis=0)
+            self.instances.append(X)
             
         if update_summary:
             self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n + 1)
@@ -278,13 +279,15 @@ class ImpurityBasedCluster(MicroCluster):
         self.entropy = 0
         self.number_of_labeled_samples = 0
 
-    def add_sample(self, sample):
+    def add_sample(self, sample, update_summary=False):
         """Add a sample to the cluster, the sample can be labeled or not. Expects -1 as the label for an unlabeled sample.
 
         Parameters
         ----------
         sample : ShortMemInstance
             Instance to add to the cluster
+        update_summary : bool
+            Whether or not to update the microcluster supplementary properties (mean distance & squared sum) with this new point
         """
 
         if sample.y_true not in self.samples_by_label:
@@ -299,24 +302,27 @@ class ImpurityBasedCluster(MicroCluster):
 
         X = sample.point
         if self.instances is not None:
-            self.instances = np.append(self.instances, [sample.point],
-                                       axis=0)
+            self.instances.append(sample.point)
             self.linear_sum = np.sum([self.linear_sum, X], axis=0)
         else:
-            self.instances = np.array([sample.point])
+            self.instances = [sample.point]
             self.linear_sum = X
         
         self.n += 1
-        self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n)
-        self.squared_sum = np.sum([self.squared_sum, np.square(X).sum()], axis=0)
+       
+        if update_summary:
+            self.mean_distance = (self.n * self.mean_distance + self.distance_to_centroid(X)) / (self.n)
+            self.squared_sum = np.sum([self.squared_sum, np.square(X).sum()], axis=0)
 
-    def remove_sample(self, sample):
+    def remove_sample(self, sample, update_summary=False):
         """Remove a sample from the cluster, the sample can be labeled or not. Expects -1 as the label for an unlabeled sample.
 
         Parameters
         ----------
         sample : ShortMemInstance
             Instance to remove from the cluster
+        update_summary : bool
+            Whether or not to update the microcluster supplementary properties (mean distance & squared sum) with this new point
         """
         self.samples_by_label[sample.y_true] -= 1
 
@@ -325,11 +331,12 @@ class ImpurityBasedCluster(MicroCluster):
 
         self.instances.remove(sample.point)
         self.n -= 1
-
         X = sample.point
-        self.mean_distance = (self.n * self.mean_distance - self.distance_to_centroid(X)) / (self.n)
         self.linear_sum = np.sum([self.linear_sum, -1*X], axis=0)
-        self.squared_sum = np.sum([self.squared_sum, -1*np.square(X).sum()], axis=0)
+
+        if update_summary:        
+            self.mean_distance = (self.n * self.mean_distance - self.distance_to_centroid(X)) / (self.n)
+            self.squared_sum = np.sum([self.squared_sum, -1*np.square(X).sum()], axis=0)
 
     def update_entropy(self):
         label_probabilities = [self.calculate_label_probability(label) for label in self.samples_by_label if label != -1]

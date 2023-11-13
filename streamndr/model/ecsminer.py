@@ -235,7 +235,7 @@ class ECSMiner(base.MiniBatchClassifier):
 
                             #Remove instances from the buffer
                             for instance in novel_cluster.instances:
-                                self._remove_sample_from_short_mem(self.short_mem.index(instance))
+                                self._remove_sample_from_short_mem(self.short_mem.index(np.array(instance)))
 
             #Enqueue X in the unlabeled buffer
             self.unlabeled_buffer.append(ShortMemInstance(X[i], self.sample_counter, y[i]))

@@ -378,8 +378,8 @@ class Minas(base.MiniBatchClassifier):
                 self.microclusters.append(cluster)
 
                 # remove these examples from short term memory
-                for instance in cluster.instances:
-                    index = self.short_mem.index(instance)
+                for point in cluster.instances:
+                    index = self.short_mem.index(np.array(point))
                     y_true = self.short_mem[index].y_true
                     if y_true is not None:
                         self.nb_class_unknown[y_true] -= 1

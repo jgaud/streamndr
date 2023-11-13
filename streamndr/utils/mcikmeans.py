@@ -212,6 +212,7 @@ class MCIKMeans():
                 chosen_cluster, _ = next(iterator)
                 min_dist = self._get_distance_value(sample, self.clusters[chosen_cluster], sample.y_true != -1)
 
+                #TODO: Parallelize this loop
                 for key, _ in iterator:
                     if (self._get_distance_value(sample, self.clusters[key], sample.y_true != -1)) < min_dist:
                         chosen_cluster = key
