@@ -49,7 +49,7 @@ class MCIKMeans():
         if random_state != None:
             random.seed(random_state)
 
-        self.clusters = {}
+        self.clusters = []
 
     def fit(self, X, y):
         """Compute MCI-Kmeans clustering.
@@ -104,7 +104,7 @@ class MCIKMeans():
                     centroids.append(choice)
 
         for i in range(len(centroids)):
-            self.clusters[i] = ImpurityBasedCluster(i, centroids[i])
+            self.clusters.append(ImpurityBasedCluster(i, centroids[i]))
 
         iterations = 0
         changing = True
@@ -112,13 +112,13 @@ class MCIKMeans():
         while changing and iterations < self.max_iter:
             changing = self._iterative_conditional_mode(samples_per_class, unlabeled_samples)
 
-            for cluster in self.clusters.values():
+            for cluster in self.clusters:
                 if cluster.n > 0:
                     cluster.update_properties()
 
             iterations += 1
 
-        self.cluster_centers_ = np.array([cluster.centroid for cluster in self.clusters.values()])
+        self.cluster_centers_ = np.array([cluster.centroid for cluster in self.clusters])
         self.labels_ = self.predict(X)
 
         return self
@@ -137,7 +137,7 @@ class MCIKMeans():
         numpy.ndarray
             Index of the cluster each sample belongs to
         """
-        labels, _ = get_closest_clusters(X, [cluster.centroid for cluster in self.clusters.values()])
+        labels, _ = get_closest_clusters(X, [cluster.centroid for cluster in self.clusters])
 
         return labels
     
@@ -207,18 +207,18 @@ class MCIKMeans():
                     self.clusters[previous_cluster_id].remove_sample(sample)
                     sample.timestamp = None
 
-                
-                iterator = iter(self.clusters.items())
-                chosen_cluster, _ = next(iterator)
-                min_dist = self._get_distance_value(sample, self.clusters[chosen_cluster], sample.y_true != -1)
+                distances = np.linalg.norm([cluster.centroid for cluster in self.clusters] - sample.point, axis=1)
 
-                #TODO: Parallelize this loop
-                for key, _ in iterator:
-                    if (self._get_distance_value(sample, self.clusters[key], sample.y_true != -1)) < min_dist:
-                        chosen_cluster = key
+                if sample.y_true != -1:
+                    entropies = np.array([cluster.entropy for cluster in self.clusters])
+                    dissimilarities = np.array([cluster.dissimilarity_count(sample) for cluster in self.clusters])
+                    distances = distances * (1 + entropies * dissimilarities)
+                
+                chosen_cluster = np.argmin(distances)
+
 
                 self.clusters[chosen_cluster].add_sample(sample)
-                sample.timestamp = self.clusters[chosen_cluster].label
+                sample.timestamp = chosen_cluster
 
                 self.clusters[chosen_cluster].update_entropy()
 
@@ -227,10 +227,3 @@ class MCIKMeans():
                     no_change = False
 
         return not no_change
-    
-    def _get_distance_value(self, sample, cluster, is_labeled):
-        if is_labeled:
-            return cluster.distance_to_centroid(sample.point) * (1 + cluster.entropy * cluster.dissimilarity_count(sample))
-        
-        else:
-            return cluster.distance_to_centroid(sample.point)

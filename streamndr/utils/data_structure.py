@@ -59,6 +59,7 @@ class MicroCluster(object):
             self.update_properties()
 
         else:
+            self.instances = None
             self.n = 0
             self.linear_sum = 0
             self.squared_sum = 0
