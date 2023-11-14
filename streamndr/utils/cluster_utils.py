@@ -72,7 +72,8 @@ def qnsc(pseudopoints, model, q_p=5):
 
     # Set the diagonal elements to a large value to avoid selecting the same point
     np.fill_diagonal(distances, np.inf)
-    indices = np.argpartition(distances, min(q_p, pseudopoints.size-1), axis=1)[:, :q_p]
+    q = min(q_p, len(pseudopoints)-2) #-2 because we can't select the same point
+    indices = np.argpartition(distances, q, axis=1)[:, :q] 
 
     # Retrieve the Q minimum distances for each point
     min_distances = np.take_along_axis(distances, indices, axis=1)
@@ -80,7 +81,6 @@ def qnsc(pseudopoints, model, q_p=5):
     
     for i, point in enumerate(pseudopoints):
         dc_out = dc_outs[i]
-    
         dc_q = []
         for _, clusters in cluster_by_label.items():
             dists = []
@@ -92,8 +92,6 @@ def qnsc(pseudopoints, model, q_p=5):
             dc_q.append(np.sum(q_closest)/q)
 
         dcmin_q = np.min(dc_q)
-
-
         qnsc = (dcmin_q - dc_out) / max(dcmin_q, dc_out)
         
         qnscs.append(qnsc)
