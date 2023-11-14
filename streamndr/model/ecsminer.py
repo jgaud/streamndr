@@ -39,7 +39,7 @@ class ECSMiner(base.MiniBatchClassifier):
 
     Attributes
     ----------
-    models : list of list of ClusterModel
+    models : list of ClusterModel
         List containing the models of the ensemble.
     nb_class_unknown : dict
         Tracks the number of samples of each true class value currently in the unknown buffer (short_mem). Used to compute the unknown rate.
@@ -174,7 +174,7 @@ class ECSMiner(base.MiniBatchClassifier):
         Returns
         -------
         numpy.ndarray
-            Array of length len(X) containing the predicted labels, predicts -1 if the corresponding sample labeled as unknown
+            Array of length len(X) containing the predicted labels, predicts -1 if the corresponding sample is labeled as unknown
 
         Raises
         ------
@@ -187,7 +187,7 @@ class ECSMiner(base.MiniBatchClassifier):
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
-        f_outliers = self._check_f_outlier(X)
+        f_outliers = self._check_f_outlier(X, self.models)
         closest_model_cluster, y_preds = self._majority_voting(X)
         
         pred_label = []
@@ -346,13 +346,13 @@ class ECSMiner(base.MiniBatchClassifier):
         
         return microclusters
     
-    def _check_f_outlier(self, X):
+    def _check_f_outlier(self, X, models):
         
         #TODO: Parallelize these for loops through Numpy arrays
         f_outliers = []
         for point in X:
             f_outlier = True
-            for model in self.models:
+            for model in models:
                 #X is an F-outlier if it is outside the decision boundary of all models
                 for microcluster in model.microclusters:
                     if microcluster.distance_to_centroid(point) <= microcluster.max_distance:
@@ -415,7 +415,7 @@ class ECSMiner(base.MiniBatchClassifier):
         
         #Creating F-pseudopoints representing all F-outliers to speedup computation of qnsc
         K0 = round(self.K * (len(X) / self.chunk_size))
-        K0 = max(K0, self.K)
+        #K0 = max(K0, self.K)
         K0 = min(K0, len(X)) #Can't create K clusters if K is higher than the number of samples
 
         f_microclusters = self._generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True, min_samples=0, algorithm="kmeans")

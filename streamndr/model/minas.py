@@ -13,7 +13,10 @@ from streamndr.utils.cluster_utils import get_closest_clusters
 __all__ = ["Minas"]
 
 class Minas(base.MiniBatchClassifier):
-    """Implementation of the MINAS algorithm for novelty detection.
+    """Implementation of the MINAS algorithm for novelty detection. [1]
+
+    [1] de Faria, Elaine Ribeiro, André Carlos Ponce de Leon Ferreira Carvalho, and Joao Gama. "MINAS: multiclass learning algorithm for novelty detection in data streams." 
+    Data mining and knowledge discovery 30 (2016): 640-680.
 
     Parameters
     ----------
