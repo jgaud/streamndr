@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from collections import deque
+import hashlib
 
 __all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster", "ClusterModel", "ShortMem"]
 
@@ -406,41 +406,38 @@ class ClusterModel:
 
 class ShortMem:
     def __init__(self):
-        self.deque = deque()
+        self.list = []
         self.dictionary = {}
 
     def append(self, instance):
-        index = len(self.deque)
-        h = hash(instance.point.data.tobytes())
-        if h in self.dictionary:
-            print("Problem")
-        self.deque.append((h, instance))
+        index = len(self.list)
+        h = hashlib.sha256(instance.point.tobytes()).hexdigest()
+        self.list.append((h, instance))
         self.dictionary[h] = index
 
-    def remove(self, index):
-        if 0 <= index < len(self.deque):
-            instance = self.deque[index]
-            del self.deque[index]
+    def remove(self, index):   
+        if 0 <= index < len(self.list):
+            instance = self.list.pop(index)
             del self.dictionary[instance[0]]
 
-        for i in range(index, len(self.deque)):
-            self.dictionary[self.deque[i][0]] = i
+            for i in range(index, len(self.list)):
+                self.dictionary[self.list[i][0]] = i
 
     def index(self, instance):
         if type(instance) == np.ndarray:
-            return self.dictionary.get(hash(instance.data.tobytes()), None)
+            return self.dictionary[hashlib.sha256(instance.tobytes()).hexdigest()]
         elif type(instance) == ShortMemInstance:
-            return self.dictionary.get(hash(instance.point.data.tobytes()), None)
+            return self.dictionary[hashlib.sha256(instance.point.tobytes()).hexdigest()]
     
     def length(self):
-        return len(self.deque)
+        return len(self.list)
+    
+    def get_all_instances(self):
+        return [instance[1] for instance in self.list]
     
     def get_instance(self, index):
-        return self.deque[index][1]
-
-    def get_all_instances(self):
-        return np.array([instance[1] for instance in self.deque])
+        return self.list[index][1]
     
     def get_all_points(self):
-        return np.array([instance[1].point for instance in self.deque])
+        return np.array([instance[1].point for instance in self.list])
     

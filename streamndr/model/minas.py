@@ -415,7 +415,7 @@ class Minas(base.MiniBatchClassifier):
         return [cluster for cluster in self.microclusters if cluster.label == label]
 
     def _trigger_forget(self):
-        for cluster in self.microclusters:
+        for cluster in list(self.microclusters):
             if cluster.timestamp < self.sample_counter - self.window_size:
                 if self.verbose > 1:
                     print("Forgetting cluster: ", cluster)
@@ -424,10 +424,11 @@ class Minas(base.MiniBatchClassifier):
                     
                 self.sleep_mem.append(cluster)
                 self.microclusters.remove(cluster)
+
         for instance in self.short_mem.get_all_instances():
             if instance.timestamp < self.sample_counter - self.window_size:
                 index = self.short_mem.index(instance)
-                y_true = self.short_mem.get_instance(index).y_true
+                y_true = instance.y_true
                 if y_true is not None:
                     self.nb_class_unknown[y_true] -= 1
                 self.short_mem.remove(index)
