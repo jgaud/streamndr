@@ -1,7 +1,8 @@
 import numpy as np
 import math
+from collections import deque
 
-__all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster", "ClusterModel"]
+__all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster", "ClusterModel", "ShortMem"]
 
 class MicroCluster(object):
     """A representation of a cluster with compressed information.
@@ -401,3 +402,45 @@ class ClusterModel:
     def __init__(self, microclusters, labels):
         self.microclusters = microclusters
         self.labels = labels
+
+
+class ShortMem:
+    def __init__(self):
+        self.deque = deque()
+        self.dictionary = {}
+
+    def append(self, instance):
+        index = len(self.deque)
+        h = hash(instance.point.data.tobytes())
+        if h in self.dictionary:
+            print("Problem")
+        self.deque.append((h, instance))
+        self.dictionary[h] = index
+
+    def remove(self, index):
+        if 0 <= index < len(self.deque):
+            instance = self.deque[index]
+            del self.deque[index]
+            del self.dictionary[instance[0]]
+
+        for i in range(index, len(self.deque)):
+            self.dictionary[self.deque[i][0]] = i
+
+    def index(self, instance):
+        if type(instance) == np.ndarray:
+            return self.dictionary.get(hash(instance.data.tobytes()), None)
+        elif type(instance) == ShortMemInstance:
+            return self.dictionary.get(hash(instance.point.data.tobytes()), None)
+    
+    def length(self):
+        return len(self.deque)
+    
+    def get_instance(self, index):
+        return self.deque[index][1]
+
+    def get_all_instances(self):
+        return np.array([instance[1] for instance in self.deque])
+    
+    def get_all_points(self):
+        return np.array([instance[1].point for instance in self.deque])
+    

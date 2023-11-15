@@ -50,7 +50,7 @@ def qnsc(pseudopoints, model, q_p=5):
     model : list of MicroCluster
         Microclusters representing a model
     q_p : int
-        XXXXX
+        Number of neighboring points to consider
 
     Returns
     -------

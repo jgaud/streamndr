@@ -9,4 +9,5 @@ __all__ = [
     "MicroCluster",
     "ShortMemInstance",
     "ClusterModel",
+    "ShortMem",
 ]

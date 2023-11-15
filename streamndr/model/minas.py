@@ -7,7 +7,7 @@ from river import base
 from clusopt_core.cluster import CluStream
 from sklearn.cluster import KMeans
 
-from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
+from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ShortMem
 from streamndr.utils.cluster_utils import get_closest_clusters
 
 __all__ = ["Minas"]
@@ -86,7 +86,7 @@ class Minas(base.MiniBatchClassifier):
         self.microclusters = []  # list of microclusters
         self.before_offline_phase = True
 
-        self.short_mem = []
+        self.short_mem = ShortMem()
         self.sleep_mem = []
         self.nb_class_unknown = dict()
         self.class_sample_counter = dict()
@@ -231,7 +231,7 @@ class Minas(base.MiniBatchClassifier):
         float
             Unknown rate
         """
-        return len(self.short_mem) / self.sample_counter
+        return self.short_mem.length() / self.sample_counter
     
     def get_class_unknown_rate(self):
         """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
@@ -264,11 +264,11 @@ class Minas(base.MiniBatchClassifier):
             self.short_mem.append(ShortMemInstance(X, self.sample_counter))
         
         if self.verbose > 1:
-            print('Memory length: ', len(self.short_mem))
+            print('Memory length: ', self.short_mem.length())
         elif self.verbose > 0:
-            if len(self.short_mem) % 100 == 0: print('Memory length: ', len(self.short_mem))
+            if self.short_mem.length() % 100 == 0: print('Memory length: ', self.short_mem.length())
             
-        if len(self.short_mem) >= self.min_short_mem_trigger:
+        if self.short_mem.length() >= self.min_short_mem_trigger:
             self._novelty_detect()
 
     def _offline(self, X_train, y_train):
@@ -307,7 +307,7 @@ class Minas(base.MiniBatchClassifier):
     def _novelty_detect(self):
         if self.verbose > 0: print("Novelty detection started")
         possible_clusters = []
-        X = np.array([instance.point for instance in self.short_mem])
+        X = self.short_mem.get_all_points()
 
         if self.cluster_algorithm == 'kmeans':
             cluster_clf = KMeans(n_clusters=self.kini, n_init='auto',
@@ -383,10 +383,10 @@ class Minas(base.MiniBatchClassifier):
                 # remove these examples from short term memory
                 for point in cluster.instances:
                     index = self.short_mem.index(np.array(point))
-                    y_true = self.short_mem[index].y_true
+                    y_true = self.short_mem.get_instance(index).y_true
                     if y_true is not None:
                         self.nb_class_unknown[y_true] -= 1
-                    self.short_mem.pop(index)
+                    self.short_mem.remove(index)
                     
 
     def _best_threshold(self, new_cluster, closest_cluster, strategy):
@@ -424,10 +424,10 @@ class Minas(base.MiniBatchClassifier):
                     
                 self.sleep_mem.append(cluster)
                 self.microclusters.remove(cluster)
-        for instance in self.short_mem:
+        for instance in self.short_mem.get_all_instances():
             if instance.timestamp < self.sample_counter - self.window_size:
                 index = self.short_mem.index(instance)
-                y_true = self.short_mem[index].y_true
+                y_true = self.short_mem.get_instance(index).y_true
                 if y_true is not None:
                     self.nb_class_unknown[y_true] -= 1
-                self.short_mem.pop(index)
+                self.short_mem.remove(index)
