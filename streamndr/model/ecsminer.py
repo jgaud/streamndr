@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score
 
 from streamndr.utils.mcikmeans import MCIKMeans
-from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ClusterModel
+from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ClusterModel, ShortMem
 from streamndr.utils.cluster_utils import *
 
 __all__ = ["ECSMiner"]
@@ -87,7 +87,7 @@ class ECSMiner(base.MiniBatchClassifier):
         self.nb_class_unknown = dict()
         self.class_sample_counter = dict()
         self.sample_counter = 0
-        self.short_mem = [] #Potential novel class instances
+        self.short_mem = ShortMem() #Potential novel class instances
         self.unlabeled_buffer = [] #Unlabeled data points
         self.labeled_buffer = [] #Labeled data points for training
         self.last_nd = -self.min_examples_cluster #No novelty detection performed yet
@@ -246,7 +246,7 @@ class ECSMiner(base.MiniBatchClassifier):
                 self.labeled_buffer.append(instance_to_label)
 
                 #Remove from short_term_memory if it was in there and is a known class
-                if any(instance_to_label.y_true in model.labels for model in self.models) and (instance_to_label in self.short_mem):
+                if any(instance_to_label.y_true in model.labels for model in self.models) and (instance_to_label in self.short_mem.get_all_instances()):
                     self.short_mem.remove(instance_to_label)
 
                 if len(self.labeled_buffer) == self.chunk_size:
@@ -410,7 +410,7 @@ class ECSMiner(base.MiniBatchClassifier):
         
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")
-        X = np.array([instance.point for instance in self.short_mem])
+        X = self.short_mem.get_all_points()
         new_class_vote = 0
         
         #Creating F-pseudopoints representing all F-outliers to speedup computation of qnsc
@@ -449,10 +449,10 @@ class ECSMiner(base.MiniBatchClassifier):
             return None
         
     def _filter_buffer(self):
-        closest_model_cluster, _ = self._majority_voting(np.array([instance.point for instance in self.short_mem]))
+        closest_model_cluster, _ = self._majority_voting(self.short_mem.get_all_points())
 
 
-        for i, instance in enumerate(self.short_mem):
+        for i, instance in enumerate(self.short_mem.get_all_instances()):
             closest_cluster = self.models[closest_model_cluster[i][0]].microclusters[closest_model_cluster[i][1]]
 
             if ((self.sample_counter - instance.timestamp > self.chunk_size) #The instance has an age greater than the chunk size
@@ -480,7 +480,7 @@ class ECSMiner(base.MiniBatchClassifier):
         return [most_common_values[i] for i in range(len(most_common_values))]
 
     def _remove_sample_from_short_mem(self, index):
-        y_true = self.short_mem[index].y_true
+        y_true = self.short_mem.get_instance(index).y_true
         if y_true is not None:
             self.nb_class_unknown[y_true] -= 1
-        self.short_mem.pop(index)
+        self.short_mem.remove(index)

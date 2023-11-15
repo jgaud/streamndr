@@ -231,7 +231,7 @@ class Minas(base.MiniBatchClassifier):
         float
             Unknown rate
         """
-        return self.short_mem.length() / self.sample_counter
+        return len(self.short_mem) / self.sample_counter
     
     def get_class_unknown_rate(self):
         """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
@@ -264,11 +264,11 @@ class Minas(base.MiniBatchClassifier):
             self.short_mem.append(ShortMemInstance(X, self.sample_counter))
         
         if self.verbose > 1:
-            print('Memory length: ', self.short_mem.length())
+            print('Memory length: ', len(self.short_mem))
         elif self.verbose > 0:
-            if self.short_mem.length() % 100 == 0: print('Memory length: ', self.short_mem.length())
+            if len(self.short_mem) % 100 == 0: print('Memory length: ', len(self.short_mem))
             
-        if self.short_mem.length() >= self.min_short_mem_trigger:
+        if len(self.short_mem) >= self.min_short_mem_trigger:
             self._novelty_detect()
 
     def _offline(self, X_train, y_train):

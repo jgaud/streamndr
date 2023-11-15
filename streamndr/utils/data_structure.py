@@ -405,17 +405,40 @@ class ClusterModel:
 
 
 class ShortMem:
+    """Data structure for efficient addition and search of ShortMemInstances.
+
+    Attributes
+    ----------
+    list : list of tuples (hash, ShortMemInstance)
+        List containing the instances and their corresponding hash compiled from their point
+    dictionary : dictionary
+        Contains for each hash its index in the list
+    """
     def __init__(self):
         self.list = []
         self.dictionary = {}
 
     def append(self, instance):
+        """Adds an element to the data structure
+
+        Parameters
+        ----------
+        instance : ShortMemInstance
+            Element to add
+        """
         index = len(self.list)
         h = hashlib.sha256(instance.point.tobytes()).hexdigest()
         self.list.append((h, instance))
         self.dictionary[h] = index
 
-    def remove(self, index):   
+    def remove(self, index):
+        """Remove the element at the given index from the data structure.
+
+        Parameters
+        ----------
+        index : int
+            Index of the element to remove
+        """
         if 0 <= index < len(self.list):
             instance = self.list.pop(index)
             del self.dictionary[instance[0]]
@@ -424,20 +447,57 @@ class ShortMem:
                 self.dictionary[self.list[i][0]] = i
 
     def index(self, instance):
+        """Get the index of the given element.
+
+        Parameters
+        ----------
+        instance : np.ndarray or ShortMemInstance
+            Element to find
+
+        Returns
+        -------
+        int
+            Index of the element
+        """
         if type(instance) == np.ndarray:
             return self.dictionary[hashlib.sha256(instance.tobytes()).hexdigest()]
         elif type(instance) == ShortMemInstance:
             return self.dictionary[hashlib.sha256(instance.point.tobytes()).hexdigest()]
-    
-    def length(self):
-        return len(self.list)
-    
+
     def get_all_instances(self):
+        """Returns all ShortMemInstances instances within the data structure
+
+        Returns
+        -------
+        list of ShortMemInstance
+            All ShortMemInstances instances within the data structure
+        """
         return [instance[1] for instance in self.list]
     
     def get_instance(self, index):
+        """Return specific ShortMemInstance at given index
+
+        Parameters
+        ----------
+        index : int
+            Index
+
+        Returns
+        -------
+        ShortMemInstance
+            The instance at the given index
+        """
         return self.list[index][1]
     
     def get_all_points(self):
+        """Returns all points within the data structure
+
+        Returns
+        -------
+        np.ndarray
+            All points contained in the data structure
+        """
         return np.array([instance[1].point for instance in self.list])
     
+    def __len__(self):
+        return len(self.list)
