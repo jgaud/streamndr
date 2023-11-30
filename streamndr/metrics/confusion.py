@@ -25,7 +25,7 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
 
     def get_associated_classes(self):
         """Computes the associated known class to each novelty pattern discovered, as described in [1], by using the real class most represented in each novelty pattern.
-        Ignores the unkown samples (label -1).
+        Ignores the unknown samples (label -1).
 
         [1] E. R. Faria, I. J. C. R. Gonçalves, J. Gama and A. C. P. L. F. Carvalho, "Evaluation Methodology for Multiclass Novelty Detection Algorithms," 
         2013 Brazilian Conference on Intelligent Systems, Fortaleza, Brazil, 2013, pp. 19-25, doi: 10.1109/BRACIS.2013.12.

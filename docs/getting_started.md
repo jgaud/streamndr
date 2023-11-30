@@ -55,9 +55,9 @@ y_train = np.array(y_train)
 Let's train our MINAS model on the offline (known) data.
 ```python
 from streamndr.model import Minas
-clf = Minas(kini=10, cluster_algorithm='kmeans', 
-            window_size=100, threshold_strategy=1, threshold_factor=1.1, 
-            min_short_mem_trigger=100, min_examples_cluster=50, verbose=1, random_state=42)
+clf = Minas(kini=100, cluster_algorithm='clustream', 
+            window_size=600, threshold_strategy=1, threshold_factor=1.1, 
+            min_short_mem_trigger=100, min_examples_cluster=20, verbose=1, random_state=42)
 
 clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
 ```
@@ -74,6 +74,7 @@ m_new = MNew(known_classes)
 f_new = FNew(known_classes)
 err_rate = ErrRate(known_classes)
 
+i = 1
 for x, y_true in zip(X_test, y_test):
 
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
@@ -83,26 +84,25 @@ for x, y_true in zip(X_test, y_test):
         m_new = m_new.update(y_true, y_pred[0])
         f_new = f_new.update(y_true, y_pred[0])
         err_rate = err_rate.update(y_true, y_pred[0])
+
+
+    #Show progress
+    if i % 100 == 0:
+        print(f"{i}/{len(X_test)}")
+    i += 1
 ```
-Looking at the confusion matrix below, with -1 being the unknown class, we can see that our model succesfully detected some of our novel classes ([3,4]) as novel concepts. The percentage of novel classes instances misclassified as known is also fairly low (2.05%), but we did classified a lot of our known classes samples as novel ones (54.13%). Of course, the hyperparameters of the model can be tuned a lot more to get better results.
+
+Let's look at the results, of course, the hyperparameters of the model can be tuned to get better results.
+
 ```python
-print(conf_matrix)
+#print(conf_matrix) #Shows the confusion matrix of the given problem, can be very wide due to one class being detected as multiple Novelty Patterns
 print(m_new) #Percentage of novel class instances misclassified as known.
 print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
-
-|        | **-1** | **0** | **1** | **2** | **3** |
-|--------|--------|-------|-------|-------|-------|
-| **-1** | 0      | 0     | 0     | 0     | 0     |
-| **0**  | 722    | 341   | 33    | 10     | 44    |
-| **1**  | 1155   | 19     | 1296  | 58    | 4     |
-| **2**  | 386    | 7     | 19    | 312   | 0     |
-| **3**  | 172    | 1     | 0     | 0     | 421   |
-
-MNew: 2.05% <br/>
-FNew: 54.13% <br/>
-ErrRate: 41.44% <br/>
+MNew: 15.86% <br/>
+FNew: 43.40% <br/>
+ErrRate: 38.48% <br/>
 
 
 ### ECSMiner-WF
@@ -110,7 +110,7 @@ Let's train our model on the offline (known) data.
 
 ```python
 from streamndr.model import ECSMinerWF
-clf = ECSMinerWF(K=5, min_examples_cluster=5, verbose=1, random_state=42, ensemble_size=20)
+clf = ECSMinerWF(K=50, min_examples_cluster=10, verbose=1, random_state=42, ensemble_size=7, init_algorithm="kmeans")
 clf.learn_many(np.array(X_train), np.array(y_train))
 ```
 Once again, let's use our model in an online fashion.
@@ -123,7 +123,7 @@ err_rate = ErrRate(known_classes)
 for x, y_true in zip(X_test, y_test):
 
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
-    
+
     if y_pred is not None: #Update our metrics
         conf_matrix = conf_matrix.update(y_true, y_pred[0])
         m_new = m_new.update(y_true, y_pred[0])
@@ -131,25 +131,13 @@ for x, y_true in zip(X_test, y_test):
         err_rate = err_rate.update(y_true, y_pred[0])
 ```
 
-The confusion matrix shows us that ECSMiner successfully detected some of the samples of our third class as novel concepts, but not our second class. Again, a lot more tuning can be done to the hyperparameters to improve the results. It is to be noted too that ECSMiner is originally an algorithm that receives feedback (true values) back from the user. With feedback, the algorithm would perform a lot better.
 ```python
-print(conf_matrix)
+#print(conf_matrix) #Shows the confusion matrix of the given problem, can be very wide due to one class being detected as multiple Novelty Patterns
 print(m_new) #Percentage of novel class instances misclassified as known.
 print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
 
-|        | **-1** | **0** | **1** | **2** | **3** | **4** | **5** | **6** |
-|--------|--------|-------|-------|-------|-------|-------|-------|-------|
-| **-1** | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
-| **0**  | 92     | 835   | 219   | 3     | 0     | 0     | 1     | 0     |
-| **1**  | 216    | 180   | 2131  | 0     | 0     | 1     | 2     | 2     |
-| **2**  | 44     | 6     | 673   | 0     | 0     | 1     | 0     | 0     |
-| **3**  | 106    | 280   | 88    | 0     | 67    | 23    | 19    | 11    |
-| **4**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
-| **5**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
-| **6**  | 0      | 0     | 0     | 0     | 0     | 0     | 0     | 0     |
-
-MNew: 79.44% <br/>
-FNew: 8.61% <br/>
-ErrRate: 35.26% <br/>
+MNew: 32.78% <br/>
+FNew: 31.88% <br/>
+ErrRate: 34.18% <br/>

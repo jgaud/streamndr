@@ -7,12 +7,16 @@ from river import base
 from clusopt_core.cluster import CluStream
 from sklearn.cluster import KMeans
 
-from streamndr.utils.data_structure import MicroCluster, ShortMemInstance
+from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ShortMem
+from streamndr.utils.cluster_utils import get_closest_clusters
 
 __all__ = ["Minas"]
 
 class Minas(base.MiniBatchClassifier):
-    """Implementation of the MINAS algorithm for novelty detection.
+    """Implementation of the MINAS algorithm for novelty detection. [1]
+
+    [1] de Faria, Elaine Ribeiro, André Carlos Ponce de Leon Ferreira Carvalho, and Joao Gama. "MINAS: multiclass learning algorithm for novelty detection in data streams." 
+    Data mining and knowledge discovery 30 (2016): 640-680.
 
     Parameters
     ----------
@@ -82,7 +86,7 @@ class Minas(base.MiniBatchClassifier):
         self.microclusters = []  # list of microclusters
         self.before_offline_phase = True
 
-        self.short_mem = []
+        self.short_mem = ShortMem()
         self.sleep_mem = []
         self.nb_class_unknown = dict()
         self.class_sample_counter = dict()
@@ -127,7 +131,7 @@ class Minas(base.MiniBatchClassifier):
         Returns
         -------
         Minas
-            Itself
+            Fitted estimator
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
@@ -184,7 +188,7 @@ class Minas(base.MiniBatchClassifier):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
         # Finding closest clusters for received samples
-        closest_clusters = self._get_closest_clusters(X, [microcluster.centroid for microcluster in self.microclusters])
+        closest_clusters, _ = get_closest_clusters(X, [microcluster.centroid for microcluster in self.microclusters])
         
         pred_label = []
         
@@ -196,32 +200,21 @@ class Minas(base.MiniBatchClassifier):
                 else:
                     self.class_sample_counter[y[i]] += 1
 
-            closest_cluster = self.microclusters[closest_clusters[i]]
+            if closest_clusters[i] != -1:
+                closest_cluster = self.microclusters[closest_clusters[i]]
 
-            if closest_cluster.encompasses(X[i]):  # classify in this cluster
-                pred_label.append(closest_cluster.label)
+                if closest_cluster.encompasses(X[i]):  # classify in this cluster
+                    pred_label.append(closest_cluster.label)
 
-                closest_cluster.update_cluster(X[i], self.sample_counter, self.update_summary)
+                    closest_cluster.update_cluster(X[i], self.sample_counter, self.update_summary)
 
-            else:  # classify as unknown
+                else:  # classify as unknown
+                    pred_label.append(-1)
+                    self._label_as_unknown(X[i], y[i])
+
+            else: # classify as unknown
                 pred_label.append(-1)
-
-                if y is not None:
-                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter, y[i]))
-                    if y[i] not in self.nb_class_unknown:
-                        self.nb_class_unknown[y[i]] = 1
-                    else:
-                        self.nb_class_unknown[y[i]] += 1
-                else:
-                    self.short_mem.append(ShortMemInstance(X[i], self.sample_counter))
-                
-                if self.verbose > 1:
-                    print('Memory length: ', len(self.short_mem))
-                elif self.verbose > 0:
-                    if len(self.short_mem) % 100 == 0: print('Memory length: ', len(self.short_mem))
-                    
-                if len(self.short_mem) >= self.min_short_mem_trigger:
-                    self._novelty_detect()
+                self._label_as_unknown(X[i], y[i])
    
         # forgetting mechanism
         if self.sample_counter % self.window_size == 0:
@@ -260,6 +253,24 @@ class Minas(base.MiniBatchClassifier):
         #It is only added as to follow River's API.
         pass
 
+    def _label_as_unknown(self, X, y=None):
+        if y is not None:
+            self.short_mem.append(ShortMemInstance(X, self.sample_counter, y))
+            if y not in self.nb_class_unknown:
+                self.nb_class_unknown[y] = 1
+            else:
+                self.nb_class_unknown[y] += 1
+        else:
+            self.short_mem.append(ShortMemInstance(X, self.sample_counter))
+        
+        if self.verbose > 1:
+            print('Memory length: ', len(self.short_mem))
+        elif self.verbose > 0:
+            if len(self.short_mem) % 100 == 0: print('Memory length: ', len(self.short_mem))
+            
+        if len(self.short_mem) >= self.min_short_mem_trigger:
+            self._novelty_detect()
+
     def _offline(self, X_train, y_train):
         microclusters = []
         # in offline phase, consider all instances arriving at the same time in the microclusters:
@@ -281,7 +292,7 @@ class Minas(base.MiniBatchClassifier):
                 
                 cluster_centers = class_cluster_clf.get_partial_cluster_centers()
 
-                labels = self._get_closest_clusters(X_class, cluster_centers)
+                labels, _ = get_closest_clusters(X_class, cluster_centers)
 
             for class_cluster in np.unique(labels):
                 # get instances in cluster
@@ -294,23 +305,24 @@ class Minas(base.MiniBatchClassifier):
         return microclusters
 
     def _novelty_detect(self):
-        if self.verbose > 0: print("Novelty detection started")
+        if self.verbose > 1: print("Novelty detection started")
         possible_clusters = []
-        X = np.array([instance.point for instance in self.short_mem])
+        X = self.short_mem.get_all_points()
+        K0 = min(self.kini, len(X)) #Can't create K clusters if K is higher than the number of samples
 
         if self.cluster_algorithm == 'kmeans':
-            cluster_clf = KMeans(n_clusters=self.kini, n_init='auto',
+            cluster_clf = KMeans(n_clusters=K0, n_init='auto',
                                  random_state=self.random_state)
             cluster_clf.fit(X)
             labels = cluster_clf.labels_
 
         else:
-            cluster_clf = CluStream(m=self.kini)
+            cluster_clf = CluStream(m=K0)
             cluster_clf.init_offline(X, seed=self.random_state)
             
             cluster_centers = cluster_clf.get_partial_cluster_centers()
 
-            labels = self._get_closest_clusters(X, cluster_centers)
+            labels, _ = get_closest_clusters(X, cluster_centers)
 
             
 
@@ -370,12 +382,12 @@ class Minas(base.MiniBatchClassifier):
                 self.microclusters.append(cluster)
 
                 # remove these examples from short term memory
-                for instance in cluster.instances:
-                    index = self.short_mem.index(instance)
-                    y_true = self.short_mem[index].y_true
+                for point in cluster.instances:
+                    index = self.short_mem.index(np.array(point))
+                    y_true = self.short_mem.get_instance(index).y_true
                     if y_true is not None:
                         self.nb_class_unknown[y_true] -= 1
-                    self.short_mem.pop(index)
+                    self.short_mem.remove(index)
                     
 
     def _best_threshold(self, new_cluster, closest_cluster, strategy):
@@ -399,28 +411,12 @@ class Minas(base.MiniBatchClassifier):
                     return factor_2 * np.max(distances)
                 elif strategy == 3:
                     return factor_3 * np.mean(distances)
-    
-    def _get_closest_clusters(self, X, centroids):   
-        
-        if len(centroids) == 0:
-            print("No clusters")
-            return
-            
-        centroids = np.array(centroids)
-        norm_dists = np.zeros((X.shape[0],centroids.shape[0]))
-
-        # Cut into batches if there are too many samples to save on memory
-        for idx in range(math.ceil(X.shape[0]/Minas.MAX_MEMORY_SIZE)):
-            sl = slice(idx*Minas.MAX_MEMORY_SIZE, (idx+1)*Minas.MAX_MEMORY_SIZE)
-            norm_dists[sl] = np.linalg.norm(np.subtract(X[sl, :, None], np.transpose(centroids)), axis=1)
-
-        return np.argmin(norm_dists, axis=1)
 
     def _get_clusters_in_class(self, label):
         return [cluster for cluster in self.microclusters if cluster.label == label]
 
     def _trigger_forget(self):
-        for cluster in self.microclusters:
+        for cluster in list(self.microclusters):
             if cluster.timestamp < self.sample_counter - self.window_size:
                 if self.verbose > 1:
                     print("Forgetting cluster: ", cluster)
@@ -429,10 +425,11 @@ class Minas(base.MiniBatchClassifier):
                     
                 self.sleep_mem.append(cluster)
                 self.microclusters.remove(cluster)
-        for instance in self.short_mem:
+
+        for instance in self.short_mem.get_all_instances():
             if instance.timestamp < self.sample_counter - self.window_size:
                 index = self.short_mem.index(instance)
-                y_true = self.short_mem[index].y_true
+                y_true = instance.y_true
                 if y_true is not None:
                     self.nb_class_unknown[y_true] -= 1
-                self.short_mem.pop(index)
+                self.short_mem.remove(index)
