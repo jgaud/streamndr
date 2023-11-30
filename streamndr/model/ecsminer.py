@@ -140,7 +140,7 @@ class ECSMiner(base.MiniBatchClassifier):
         
         return self
     
-    def predict_one(self, X, y):
+    def predict_one(self, X, y=None):
         """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label and adds 
         it to the cluster if it is a known class. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
         performed once the trigger has been reached (min_examples_cluster).
@@ -160,7 +160,7 @@ class ECSMiner(base.MiniBatchClassifier):
         return self.predict_many(np.array(list(X.values()))[None,:], [y])
             
 
-    def predict_many(self, X, y):
+    def predict_many(self, X, y=None):
         """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
         Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_examples_cluster).
 
@@ -368,7 +368,7 @@ class ECSMiner(base.MiniBatchClassifier):
 
         return f_outliers
     
-    def _majority_voting(self, X):
+    def _majority_voting(self, X, return_labels=True):
         closest_clusters = []
         labels = []
         dists = []
@@ -406,7 +406,10 @@ class ECSMiner(base.MiniBatchClassifier):
 
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
         # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
-        return closest_model_cluster, self._get_most_occuring_by_column(labels)
+        if return_labels:
+            return closest_model_cluster, self._get_most_occuring_by_column(labels)
+        else:
+            return closest_model_cluster
         
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")
@@ -415,7 +418,7 @@ class ECSMiner(base.MiniBatchClassifier):
         
         #Creating F-pseudopoints representing all F-outliers to speedup computation of qnsc
         K0 = round(self.K * (len(X) / self.chunk_size))
-        #K0 = max(K0, self.K)
+        K0 = max(K0, self.K)
         K0 = min(K0, len(X)) #Can't create K clusters if K is higher than the number of samples
 
         f_microclusters = self._generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True, min_samples=0, algorithm="kmeans")
@@ -449,7 +452,7 @@ class ECSMiner(base.MiniBatchClassifier):
             return None
         
     def _filter_buffer(self):
-        closest_model_cluster, _ = self._majority_voting(self.short_mem.get_all_points())
+        closest_model_cluster = self._majority_voting(self.short_mem.get_all_points(), False)
 
 
         for i, instance in enumerate(self.short_mem.get_all_instances()):

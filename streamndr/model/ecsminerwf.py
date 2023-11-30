@@ -52,7 +52,7 @@ class ECSMinerWF(ECSMiner):
         
         self.novel_models = []
         
-    def predict_many(self, X, y):
+    def predict_many(self, X, y=None):
         """Represents the online phase. Receives multiple samples, for each sample predict its label and adds it to the cluster if it is a known class. 
         Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached (min_examples_cluster).
 
@@ -148,7 +148,7 @@ class ECSMinerWF(ECSMiner):
                                 for instance in novel_cluster.instances:
                                     self._remove_sample_from_short_mem(self.short_mem.index(np.array(instance)))
 
-                            
+                            pred_label[-1] = new_label
 
                             #Add the clusters to our novel models list
                             self.novel_models.append(ClusterModel(novel_clusters, [new_label]))

@@ -16,8 +16,7 @@ base_packages = [
     "pandas>=1.4.2",
     "numpy>=1.23.5",
     "river>=0.15.0",
-    "clusopt-core>=1.0.0",
-    "pytest>=7.4.3"
+    "clusopt-core>=1.0.0"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

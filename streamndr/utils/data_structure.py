@@ -457,12 +457,12 @@ class ShortMem:
         Returns
         -------
         int
-            Index of the element
+            Index of the element, -1 if not found
         """
         if type(instance) == np.ndarray:
-            return self.dictionary[hashlib.sha256(instance.tobytes()).hexdigest()]
+            return self.dictionary.get(hashlib.sha256(instance.tobytes()).hexdigest(), -1)
         elif type(instance) == ShortMemInstance:
-            return self.dictionary[hashlib.sha256(instance.point.tobytes()).hexdigest()]
+            return self.dictionary.get(hashlib.sha256(instance.point.tobytes()).hexdigest(), -1)
 
     def get_all_instances(self):
         """Returns all ShortMemInstances instances within the data structure
@@ -485,9 +485,10 @@ class ShortMem:
         Returns
         -------
         ShortMemInstance
-            The instance at the given index
+            The instance at the given index, None if index not found
         """
-        return self.list[index][1]
+        if 0 <= index < len(self.list):
+            return self.list[index][1]
     
     def get_all_points(self):
         """Returns all points within the data structure

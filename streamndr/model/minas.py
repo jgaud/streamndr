@@ -305,18 +305,19 @@ class Minas(base.MiniBatchClassifier):
         return microclusters
 
     def _novelty_detect(self):
-        if self.verbose > 0: print("Novelty detection started")
+        if self.verbose > 1: print("Novelty detection started")
         possible_clusters = []
         X = self.short_mem.get_all_points()
+        K0 = min(self.kini, len(X)) #Can't create K clusters if K is higher than the number of samples
 
         if self.cluster_algorithm == 'kmeans':
-            cluster_clf = KMeans(n_clusters=self.kini, n_init='auto',
+            cluster_clf = KMeans(n_clusters=K0, n_init='auto',
                                  random_state=self.random_state)
             cluster_clf.fit(X)
             labels = cluster_clf.labels_
 
         else:
-            cluster_clf = CluStream(m=self.kini)
+            cluster_clf = CluStream(m=K0)
             cluster_clf.init_offline(X, seed=self.random_state)
             
             cluster_centers = cluster_clf.get_partial_cluster_centers()
