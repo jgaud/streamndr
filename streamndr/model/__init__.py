@@ -7,4 +7,5 @@ __all__ = [
     "Minas",
     "ECSMiner",
     "ECSMinerWF",
+    "Echo",
 ]
