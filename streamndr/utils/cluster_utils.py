@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from streamndr.utils.data_structure import MicroCluster
 from streamndr.utils.mcikmeans import MCIKMeans
 
-__all__ = ["get_closest_clusters", "qnsc", "generate_microclusters", "check_f_outlier", "get_most_occuring_by_column", "majority_voting"]
+__all__ = ["get_closest_clusters", "qnsc", "generate_microclusters", "check_f_outlier", "get_most_occuring_by_column"]
 
 #Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
 MAX_MEMORY_SIZE = 50000
@@ -173,47 +173,3 @@ def get_most_occuring_by_column(l):
         most_common_values[len(most_common_values)] = most_common_value
 
     return [most_common_values[i] for i in range(len(most_common_values))]
-
-def majority_voting(X, models, return_labels=True, ignore_old_votes=True):
-    closest_clusters = []
-    labels = []
-    dists = []
-    
-    #Iterate over all of the models in the ensemble
-    for model in models:
-        #Get the model's closest microcluster and its corresponding distance for each X
-        closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
-        closest_clusters.append(closest_clusters_model)
-        labels.append([model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model])
-        dists.append(dist)
-    
-    #From all the closest microclusters of each model, get the index of the closest model for each X
-    best_models = np.argmin(dists, axis=0)
-
-    #Check if younger classifier classifies as new class C and older classifier wasn't trained on C
-    if ignore_old_votes:
-        for k in range(len(X)):
-            for i in range(len(models)-1, 0, -1):
-                for j in range(0, i):
-                    if not labels[i][k] in models[j].labels: #If the label predicted by new classifier i was not in training sample of older classifier j
-                        #Check if the point is an outlier of model j
-                        outlier = True
-                        for microcluster in models[j].microclusters:
-                            if microcluster.distance_to_centroid(X[k]) <= microcluster.max_distance:
-                                outlier = False
-                                break
-                        #If the point is an outlier of classifier j, don't consider its label
-                        if outlier:
-                            labels[j][k] = -1
-    
-    #Finally, create a list of tuples, which contain the index of the closest model and the index of the closest microcluster within that model for each X
-    closest_model_cluster = []
-    for i in range(len(X)):
-        closest_model_cluster.append((best_models[i], closest_clusters[best_models[i]][i]))
-
-    #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
-    # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
-    if return_labels:
-        return closest_model_cluster, get_most_occuring_by_column(labels)
-    else:
-        return closest_model_cluster

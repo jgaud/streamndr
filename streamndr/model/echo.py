@@ -114,7 +114,7 @@ class Echo(NoveltyDetectionClassifier):
             X = X.to_numpy() #Converting DataFrame to numpy array
 
         f_outliers = check_f_outlier(X, self.models)
-        closest_model_cluster, y_preds = majority_voting(X, self.models, True, True)
+        closest_model_cluster, y_preds = self._majority_voting(X, True)
 
         pred_label = []
         for i in range(len(X)):
@@ -162,6 +162,34 @@ class Echo(NoveltyDetectionClassifier):
                         self._remove_sample_from_short_mem(i)
                     
         return np.array(pred_label)
+    
+    def _majority_voting(self, X, return_labels=True):
+        closest_clusters = []
+        labels = []
+        dists = []
+        
+        #Iterate over all of the models in the ensemble
+        for model in self.models:
+            #Get the model's closest microcluster and its corresponding distance for each X
+            closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
+            closest_clusters.append(closest_clusters_model)
+            labels.append([model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model])
+            dists.append(dist)
+        
+        #From all the closest microclusters of each model, get the index of the closest model for each X
+        best_models = np.argmin(dists, axis=0)
+        
+        #Finally, create a list of tuples, which contain the index of the closest model and the index of the closest microcluster within that model for each X
+        closest_model_cluster = []
+        for i in range(len(X)):
+            closest_model_cluster.append((best_models[i], closest_clusters[best_models[i]][i]))
+
+        #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
+        # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
+        if return_labels:
+            return closest_model_cluster, get_most_occuring_by_column(labels)
+        else:
+            return closest_model_cluster
     
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")
