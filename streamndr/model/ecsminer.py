@@ -5,11 +5,9 @@ from collections import Counter
 
 from river import base
 
-from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score
 
-from streamndr.utils.mcikmeans import MCIKMeans
-from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ClusterModel, ShortMem
+from streamndr.utils.data_structure import ShortMemInstance, ClusterModel, ShortMem
 from streamndr.utils.cluster_utils import *
 
 __all__ = ["ECSMiner"]
@@ -129,7 +127,7 @@ class ECSMiner(base.MiniBatchClassifier):
             X_chunk = X[i:i+self.chunk_size]
             y_chunk = y[i:i+self.chunk_size]
             
-            microclusters = self._generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
+            microclusters = generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm, random_state=self.random_state) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
             
             model = ClusterModel(microclusters, np.unique(y_chunk))
             
@@ -255,7 +253,7 @@ class ECSMiner(base.MiniBatchClassifier):
                     #Create a new model on the labeled buffer
                     points = np.vstack([inst.point for inst in self.labeled_buffer])
                     true_labels = np.array([inst.y_true for inst in self.labeled_buffer])
-                    new_microclusters = self._generate_microclusters(points, true_labels, self.sample_counter, self.K, min_samples=3, algorithm=self.init_algorithm)
+                    new_microclusters = generate_microclusters(points, true_labels, self.sample_counter, self.K, min_samples=3, algorithm=self.init_algorithm, random_state=self.random_state)
                     new_model = ClusterModel(new_microclusters, np.unique(true_labels))
 
                     #Update the existing ensemble
@@ -317,34 +315,6 @@ class ECSMiner(base.MiniBatchClassifier):
         #Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
         #It is only added as to follow River's API.
         pass
-    
-    def _generate_microclusters(self, X, y, timestamp, K, keep_instances=False, min_samples=0, algorithm="kmeans"):
-        if K == 0:
-            return []
-        
-        #Create K clusters
-        if algorithm == "kmeans":
-            clf = KMeans(n_clusters=K, n_init="auto", random_state=self.random_state).fit(X)
-        else:
-            clf = MCIKMeans(n_clusters=K, random_state=self.random_state).fit(X, y)
-            
-        cluster_labels = clf.labels_
-
-        #For each cluster, create a microcluster (cluster summary) and discard the data points
-        microclusters = []
-        for microcluster in np.unique(cluster_labels):
-            cluster_instances = X[cluster_labels == microcluster]
-            y_cluster_instances = y[cluster_labels == microcluster]
-            
-            #Assign the label of the cluster (the class label with the highest frequency in the cluster)
-            values, counts = np.unique(y_cluster_instances, return_counts=True)
-            most_common_y = values[np.argmax(counts)]
-
-            if len(cluster_instances) >= min_samples:
-                mc = MicroCluster(most_common_y, instances=cluster_instances, timestamp=timestamp, keep_instances=keep_instances)
-                microclusters.append(mc)
-        
-        return microclusters
     
     def _check_f_outlier(self, X, models):
         
@@ -421,7 +391,7 @@ class ECSMiner(base.MiniBatchClassifier):
         K0 = max(K0, self.K)
         K0 = min(K0, len(X)) #Can't create K clusters if K is higher than the number of samples
 
-        f_microclusters = self._generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True, min_samples=0, algorithm="kmeans")
+        f_microclusters = generate_microclusters(X, np.array([-1] * len(X)), self.sample_counter, K0, keep_instances=True, min_samples=0, algorithm="kmeans", random_state=self.random_state)
         f_microclusters_centroids = np.array([cl.centroid for cl in f_microclusters])
     
         potential_novel_clusters_idx = []

@@ -3,7 +3,6 @@ import copy
 import random
 
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ImpurityBasedCluster
-from streamndr.utils.cluster_utils import get_closest_clusters
 
 __all__ = ["MicroCluster", "ShortMemInstance"]
 
@@ -137,6 +136,7 @@ class MCIKMeans():
         numpy.ndarray
             Index of the cluster each sample belongs to
         """
+        from streamndr.utils.cluster_utils import get_closest_clusters
         labels, _ = get_closest_clusters(X, [cluster.centroid for cluster in self.clusters])
 
         return labels

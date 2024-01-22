@@ -1,7 +1,12 @@
 import numpy as np
 import math
 
-__all__ = ["get_closest_clusters", "qnsc"]
+from sklearn.cluster import KMeans
+
+from streamndr.utils.data_structure import MicroCluster
+import streamndr.utils.mcikmeans
+
+__all__ = ["get_closest_clusters", "qnsc", "generate_microclusters"]
 
 #Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
 MAX_MEMORY_SIZE = 50000
@@ -98,3 +103,31 @@ def qnsc(pseudopoints, model, q_p=5):
 
         
     return qnscs
+
+def generate_microclusters(X, y, timestamp, K, keep_instances=False, min_samples=0, algorithm="kmeans", random_state=None):
+    if K == 0:
+        return []
+    
+    #Create K clusters
+    if algorithm == "kmeans":
+        clf = KMeans(n_clusters=K, n_init="auto", random_state=random_state).fit(X)
+    else:
+        clf = MCIKMeans(n_clusters=K, random_state=random_state).fit(X, y)
+        
+    cluster_labels = clf.labels_
+
+    #For each cluster, create a microcluster (cluster summary) and discard the data points
+    microclusters = []
+    for microcluster in np.unique(cluster_labels):
+        cluster_instances = X[cluster_labels == microcluster]
+        y_cluster_instances = y[cluster_labels == microcluster]
+        
+        #Assign the label of the cluster (the class label with the highest frequency in the cluster)
+        values, counts = np.unique(y_cluster_instances, return_counts=True)
+        most_common_y = values[np.argmax(counts)]
+
+        if len(cluster_instances) >= min_samples:
+            mc = MicroCluster(most_common_y, instances=cluster_instances, timestamp=timestamp, keep_instances=keep_instances)
+            microclusters.append(mc)
+    
+    return microclusters
