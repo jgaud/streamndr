@@ -65,13 +65,11 @@ class ECSMiner(NoveltyDetectionClassifier):
                  random_state=None,
                  init_algorithm="mcikmeans"):
         
-        super().__init__()
+        super().__init__(verbose, random_state)
         self.K = K
         self.min_examples_cluster = min_examples_cluster
         self.ensemble_size = ensemble_size
         self.T_l = T_l
-        self.verbose = verbose
-        self.random_state = random_state
 
         accepted_algos = ['kmeans','mcikmeans']
         if init_algorithm not in accepted_algos:
@@ -85,7 +83,6 @@ class ECSMiner(NoveltyDetectionClassifier):
         self.unlabeled_buffer = [] #Unlabeled data points
         self.labeled_buffer = [] #Labeled data points for training
         self.last_nd = -self.min_examples_cluster #No novelty detection performed yet
-        self.before_offline_phase = True
 
     def learn_one(self, x, y, w=1.0):
         #Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
@@ -182,7 +179,7 @@ class ECSMiner(NoveltyDetectionClassifier):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
         f_outliers = check_f_outlier(X, self.models)
-        closest_model_cluster, y_preds = self._majority_voting(X)
+        closest_model_cluster, y_preds = majority_voting(X, self.models)
         
         pred_label = []
         for i in range(len(X)):
@@ -281,52 +278,7 @@ class ECSMiner(NoveltyDetectionClassifier):
                     self.labeled_buffer.clear()
                     
         return np.array(pred_label)
-    
-    
-    
-    def _majority_voting(self, X, return_labels=True):
-        closest_clusters = []
-        labels = []
-        dists = []
-        
-        #Iterate over all of the models in the ensemble
-        for model in self.models:
-            #Get the model's closest microcluster and its corresponding distance for each X
-            closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
-            closest_clusters.append(closest_clusters_model)
-            labels.append([model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model])
-            dists.append(dist)
-        
-        #From all the closest microclusters of each model, get the index of the closest model for each X
-        best_models = np.argmin(dists, axis=0)
-
-        #Check if younger classifier classifies as new class C and older classifier wasn't trained on C
-        for k in range(len(X)):
-            for i in range(len(self.models)-1, 0, -1):
-                for j in range(0, i):
-                    if not labels[i][k] in self.models[j].labels: #If the label predicted by new classifier i was not in training sample of older classifier j
-                        #Check if the point is an outlier of model j
-                        outlier = True
-                        for microcluster in self.models[j].microclusters:
-                            if microcluster.distance_to_centroid(X[k]) <= microcluster.max_distance:
-                                outlier = False
-                                break
-                        #If the point is an outlier of classifier j, don't consider its label
-                        if outlier:
-                            labels[j][k] = -1
-        
-        #Finally, create a list of tuples, which contain the index of the closest model and the index of the closest microcluster within that model for each X
-        closest_model_cluster = []
-        for i in range(len(X)):
-            closest_model_cluster.append((best_models[i], closest_clusters[best_models[i]][i]))
-
-        #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
-        # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
-        if return_labels:
-            return closest_model_cluster, get_most_occuring_by_column(labels)
-        else:
-            return closest_model_cluster
-        
+      
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")
         X = self.short_mem.get_all_points()
@@ -368,7 +320,7 @@ class ECSMiner(NoveltyDetectionClassifier):
             return None
         
     def _filter_buffer(self):
-        closest_model_cluster = self._majority_voting(self.short_mem.get_all_points(), False)
+        closest_model_cluster = majority_voting(self.short_mem.get_all_points(), self.models, False)
 
 
         for i, instance in enumerate(self.short_mem.get_all_instances()):
@@ -378,9 +330,3 @@ class ECSMiner(NoveltyDetectionClassifier):
                 or (closest_cluster.distance_to_centroid(instance.point) <= closest_cluster.max_distance)): #The instance is no longer an F-outlier 
 
                 self._remove_sample_from_short_mem(self.short_mem.index(instance))
-
-    def _remove_sample_from_short_mem(self, index):
-        y_true = self.short_mem.get_instance(index).y_true
-        if y_true is not None:
-            self.nb_class_unknown[y_true] -= 1
-        self.short_mem.remove(index)

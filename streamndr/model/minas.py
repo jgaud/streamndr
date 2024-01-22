@@ -71,9 +71,8 @@ class Minas(NoveltyDetectionClassifier):
                  window_size=100,
                  update_summary=False,
                  verbose=0):
-        super().__init__()
+        super().__init__(verbose, random_state)
         self.kini = kini
-        self.random_state = random_state
 
         accepted_algos = ['kmeans','clustream']
         if cluster_algorithm not in accepted_algos:
@@ -82,7 +81,6 @@ class Minas(NoveltyDetectionClassifier):
             self.cluster_algorithm = cluster_algorithm
 
         self.microclusters = []  # list of microclusters
-        self.before_offline_phase = True
 
         self.short_mem = ShortMem()
         self.sleep_mem = []
@@ -92,7 +90,6 @@ class Minas(NoveltyDetectionClassifier):
         self.threshold_factor = threshold_factor
         self.window_size = window_size
         self.update_summary = update_summary
-        self.verbose = verbose
     
     def learn_one(self, x, y, w=1.0):
         """Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
@@ -347,11 +344,7 @@ class Minas(NoveltyDetectionClassifier):
 
                 # remove these examples from short term memory
                 for point in cluster.instances:
-                    index = self.short_mem.index(np.array(point))
-                    y_true = self.short_mem.get_instance(index).y_true
-                    if y_true is not None:
-                        self.nb_class_unknown[y_true] -= 1
-                    self.short_mem.remove(index)
+                    self._remove_sample_from_short_mem(self.short_mem.index(np.array(point)))
                     
 
     def _best_threshold(self, new_cluster, closest_cluster, strategy):
@@ -392,8 +385,4 @@ class Minas(NoveltyDetectionClassifier):
 
         for instance in self.short_mem.get_all_instances():
             if instance.timestamp < self.sample_counter - self.window_size:
-                index = self.short_mem.index(instance)
-                y_true = instance.y_true
-                if y_true is not None:
-                    self.nb_class_unknown[y_true] -= 1
-                self.short_mem.remove(index)
+                self._remove_sample_from_short_mem(self.short_mem.index(instance))

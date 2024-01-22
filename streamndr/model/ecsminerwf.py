@@ -80,7 +80,7 @@ class ECSMinerWF(ECSMiner):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
         f_outliers = check_f_outlier(X, self.models)
-        closest_model_cluster, y_preds = self._majority_voting(X)
+        closest_model_cluster, y_preds = majority_voting(X, self.models)
 
         #If we have novel models, get the closest ones for all Xs
         if len(self.novel_models) > 0:
