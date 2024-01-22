@@ -128,7 +128,7 @@ def generate_microclusters(X, y, timestamp, K, keep_instances=False, min_samples
         most_common_y = values[np.argmax(counts)]
 
         if len(cluster_instances) >= min_samples:
-            mc = MicroCluster(most_common_y, instances=cluster_instances, timestamp=timestamp, keep_instances=keep_instances)
+            mc = MicroCluster(most_common_y, instances=cluster_instances, timestamp=timestamp, keep_instances=keep_instances, n_label_instances=np.max(counts))
             microclusters.append(mc)
     
     return microclusters

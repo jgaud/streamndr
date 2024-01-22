@@ -131,7 +131,7 @@ class Echo(NoveltyDetectionClassifier):
             #If X is not an F-outlier (inside the closest cluster radius), then we classify it with the label from the majority voting
             if not f_outliers[i]:
                 pred_label.append(y_preds[i])
-                #closest_cluster.update_cluster(X[i], self.sample_counter, False)
+                closest_cluster.update_cluster(X[i], self.sample_counter, False)
                 
             else: #X is an F-outlier (outside the boundary of all classifiers)
                 pred_label.append(-1)
@@ -159,7 +159,7 @@ class Echo(NoveltyDetectionClassifier):
 
                     #Remove all instances from the buffer since if they were not detected as a novel classes, they are classified as per ECHO paper
                     for i in range(len(self.short_mem)):
-                        self._remove_sample_from_short_mem(i)
+                        self._remove_sample_from_short_mem(0)
                     
         return np.array(pred_label)
     
@@ -167,6 +167,8 @@ class Echo(NoveltyDetectionClassifier):
         closest_clusters = []
         labels = []
         dists = []
+        associations = []
+        purities = []
         
         #Iterate over all of the models in the ensemble
         for model in self.models:
@@ -175,7 +177,13 @@ class Echo(NoveltyDetectionClassifier):
             closest_clusters.append(closest_clusters_model)
             labels.append([model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model])
             dists.append(dist)
-        
+
+            #Calculate the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
+            associations.append([model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist)
+
+            #Calculate the purity with: {Number of samples of the most occuring class} / {Number of all samples}
+            purities.append(np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model]))
+            
         #From all the closest microclusters of each model, get the index of the closest model for each X
         best_models = np.argmin(dists, axis=0)
         

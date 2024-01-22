@@ -18,6 +18,8 @@ class MicroCluster(object):
     keep_instances : bool
         Whether or not to store the instances within the microcluster. Should preferably set to false, but some implementations require
         access to the instances
+    n_label_instance : int
+        Number of instances of the same label associated with the microcluster
 
     Attributes
     ----------
@@ -39,7 +41,8 @@ class MicroCluster(object):
                  label,  # the class the microcluster belongs to
                  instances=None,
                  timestamp=0, 
-                 keep_instances=True #Required True for MINAS
+                 keep_instances=True, #Required True for MINAS
+                 n_label_instances=None
                  ):
 
         # TODO: remove instances entirely so it doesn't need to be stored in memory; Might not be possible because of _best_threshold used by MINAS which needs instances
@@ -68,7 +71,7 @@ class MicroCluster(object):
             self.mean_distance = 0
 
         self.timestamp = timestamp
-        
+        self.n_label_instances = n_label_instances
 
         if not keep_instances:
             self.instances = None
