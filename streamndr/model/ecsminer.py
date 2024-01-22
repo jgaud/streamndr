@@ -3,16 +3,15 @@ import pandas as pd
 import math
 from collections import Counter
 
-from river import base
-
 from sklearn.metrics import accuracy_score
+from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
 
 from streamndr.utils.data_structure import ShortMemInstance, ClusterModel, ShortMem
 from streamndr.utils.cluster_utils import *
 
 __all__ = ["ECSMiner"]
 
-class ECSMiner(base.MiniBatchClassifier):
+class ECSMiner(NoveltyDetectionClassifier):
     """Implementation of the ECSMiner algorithm for novelty detection [1].
 
     [1] Masud, Mohammad, et al. "Classification and novel class detection in concept-drifting data streams under time constraints." 
@@ -82,9 +81,6 @@ class ECSMiner(base.MiniBatchClassifier):
 
         self.models = []
         self.novel_models = []
-        self.nb_class_unknown = dict()
-        self.class_sample_counter = dict()
-        self.sample_counter = 0
         self.short_mem = ShortMem() #Potential novel class instances
         self.unlabeled_buffer = [] #Unlabeled data points
         self.labeled_buffer = [] #Labeled data points for training
@@ -185,7 +181,7 @@ class ECSMiner(base.MiniBatchClassifier):
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
-        f_outliers = self._check_f_outlier(X, self.models)
+        f_outliers = check_f_outlier(X, self.models)
         closest_model_cluster, y_preds = self._majority_voting(X)
         
         pred_label = []
@@ -286,57 +282,7 @@ class ECSMiner(base.MiniBatchClassifier):
                     
         return np.array(pred_label)
     
-    def get_unknown_rate(self):
-        """Returns the unknown rate, represents the percentage of unknown samples on the total number of samples classified in the online phase.
-
-        Returns
-        -------
-        float
-            Unknown rate
-        """
-        return len(self.short_mem) / self.sample_counter
     
-    def get_class_unknown_rate(self):
-        """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
-
-        Returns
-        -------
-        dict
-            Dictionary containing the unknown rate of each class
-        """
-        return {key: val / self.class_sample_counter[key] for key, val in self.nb_class_unknown.items()}
-    
-    def predict_proba_one(self,X):
-        #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
-        #It is only added as to follow River's API.
-        pass
-    
-    def predict_proba_many(self, X):
-        #Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
-        #It is only added as to follow River's API.
-        pass
-    
-    def _check_f_outlier(self, X, models):
-        
-        #TODO: Parallelize these for loops through Numpy arrays
-        f_outliers = []
-        for point in X:
-            f_outlier = True
-            for model in models:
-                #X is an F-outlier if it is outside the decision boundary of all models
-                for microcluster in model.microclusters:
-                    if microcluster.distance_to_centroid(point) <= microcluster.max_distance:
-                        f_outlier = False
-                        break
-                else:
-                    #If the inner condition was not triggered, we continue checking for the next model
-                    continue
-                break #Otherwise, we know X it not an F-outlier so we pass to the next point
-
-
-            f_outliers.append(f_outlier)
-
-        return f_outliers
     
     def _majority_voting(self, X, return_labels=True):
         closest_clusters = []
@@ -377,7 +323,7 @@ class ECSMiner(base.MiniBatchClassifier):
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
         # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
         if return_labels:
-            return closest_model_cluster, self._get_most_occuring_by_column(labels)
+            return closest_model_cluster, get_most_occuring_by_column(labels)
         else:
             return closest_model_cluster
         
@@ -432,25 +378,6 @@ class ECSMiner(base.MiniBatchClassifier):
                 or (closest_cluster.distance_to_centroid(instance.point) <= closest_cluster.max_distance)): #The instance is no longer an F-outlier 
 
                 self._remove_sample_from_short_mem(self.short_mem.index(instance))
-
-    def _get_most_occuring_by_column(self, l):
-        most_common_values = {}
-        for col in zip(*l):
-            #Use a Counter to count the occurrences of each value in the column while ignoring -1 since it is a label we want to ignore
-            counts = Counter(val for val in col if val != -1)
-            
-            #Find the most common value in the Counter
-            most_common_value = counts.most_common(1)
-            
-            #If there are no valid values in the column, set the most_common_value to -1
-            if not most_common_value:
-                most_common_value = -1
-            else:
-                most_common_value = most_common_value[0][0]
-
-            most_common_values[len(most_common_values)] = most_common_value
-
-        return [most_common_values[i] for i in range(len(most_common_values))]
 
     def _remove_sample_from_short_mem(self, index):
         y_true = self.short_mem.get_instance(index).y_true

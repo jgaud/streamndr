@@ -1,18 +1,16 @@
 import numpy as np
 import pandas as pd
-import math
-
-from river import base
 
 from clusopt_core.cluster import CluStream
 from sklearn.cluster import KMeans
+from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
 
 from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ShortMem
 from streamndr.utils.cluster_utils import get_closest_clusters
 
 __all__ = ["Minas"]
 
-class Minas(base.MiniBatchClassifier):
+class Minas(NoveltyDetectionClassifier):
     """Implementation of the MINAS algorithm for novelty detection. [1]
 
     [1] de Faria, Elaine Ribeiro, André Carlos Ponce de Leon Ferreira Carvalho, and Joao Gama. "MINAS: multiclass learning algorithm for novelty detection in data streams." 
@@ -88,8 +86,6 @@ class Minas(base.MiniBatchClassifier):
 
         self.short_mem = ShortMem()
         self.sleep_mem = []
-        self.nb_class_unknown = dict()
-        self.class_sample_counter = dict()
         self.min_short_mem_trigger = min_short_mem_trigger
         self.min_examples_cluster = min_examples_cluster
         self.threshold_strategy = threshold_strategy
@@ -97,7 +93,6 @@ class Minas(base.MiniBatchClassifier):
         self.window_size = window_size
         self.update_summary = update_summary
         self.verbose = verbose
-        self.sample_counter = 0  # to be used with window_size
     
     def learn_one(self, x, y, w=1.0):
         """Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
@@ -219,39 +214,8 @@ class Minas(base.MiniBatchClassifier):
         # forgetting mechanism
         if self.sample_counter % self.window_size == 0:
             self._trigger_forget()
-
         
         return np.array(pred_label)
-    
-    def get_unknown_rate(self):
-        """Returns the unknown rate, represents the percentage of unknown samples on the total number of samples classified in the online phase.
-
-        Returns
-        -------
-        float
-            Unknown rate
-        """
-        return len(self.short_mem) / self.sample_counter
-    
-    def get_class_unknown_rate(self):
-        """Returns the unknown rate per class. Represents the percentage of unknown samples on the total number of samples of that class seen during the stream.
-
-        Returns
-        -------
-        dict
-            Dictionary containing the unknown rate of each class
-        """
-        return {key: val / self.class_sample_counter[key] for key, val in self.nb_class_unknown.items()}
-
-    def predict_proba_one(self,X):
-        #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
-        #It is only added as to follow River's API.
-        pass
-    
-    def predict_proba_many(self, X):
-        #Function used by river algorithms to get the probability of the predictions. It is not applicable to this algorithm since it only predicts labels. 
-        #It is only added as to follow River's API.
-        pass
 
     def _label_as_unknown(self, X, y=None):
         if y is not None:

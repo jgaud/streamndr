@@ -8,4 +8,5 @@ __all__ = [
     "ECSMiner",
     "ECSMinerWF",
     "Echo",
+    "NoveltyDetectionClassifier",
 ]
