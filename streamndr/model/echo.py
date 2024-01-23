@@ -1,7 +1,9 @@
-from collections import Counter
+from collections import Counter, deque
 from random import random
 import pandas as pd
 import numpy as np
+from scipy.stats import pointbiserialr
+from sklearn.preprocessing import MinMaxScaler
 
 from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
 from streamndr.utils.cluster_utils import *
@@ -14,14 +16,16 @@ class Echo(NoveltyDetectionClassifier):
                  K,
                  min_examples_cluster,
                  ensemble_size,
+                 W,
                  verbose=0,
-                 random_state=None,
+                 random_state=None, #Note: Due to the nature of the algorithm, a same seed won't lead to the exact same results
                  init_algorithm="mcikmeans"):
         
         super().__init__(verbose, random_state)
         self.K = K
         self.min_examples_cluster = min_examples_cluster
         self.ensemble_size = ensemble_size
+        self.W = W
 
         accepted_algos = ['kmeans','mcikmeans']
         if init_algorithm not in accepted_algos:
@@ -31,6 +35,10 @@ class Echo(NoveltyDetectionClassifier):
 
         self.models = []
         self.short_mem = ShortMem() #Potential novel class instances
+        self.association_coefficients = []
+        self.purity_coefficients = []
+        self.confidence_window = deque(maxlen=W)
+        self.window = deque(maxlen=W)
 
     def learn_one(self, x, y, w=1.0):
         #Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
@@ -38,7 +46,7 @@ class Echo(NoveltyDetectionClassifier):
         pass
 
     def learn_many(self, X, y, w=1.0):
-        """Represents the offline phase of the algorithm. Receives a number of samples and their given labels and learns all of the known classes.
+        """Represents the offline phase of the alsgorithm. Receives a number of samples and their given labels and learns all of the known classes.
 
         Parameters
         ----------
@@ -60,19 +68,38 @@ class Echo(NoveltyDetectionClassifier):
         # in offline phase, consider all instances arriving at the same time in the microclusters:
         timestamp = len(X)
 
-        microclusters = generate_microclusters(X, y, timestamp, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=self.random_state)
+        for i in range(0, self.ensemble_size):
+            microclusters = generate_microclusters(X, y, timestamp, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=None)
 
-        model = ClusterModel(microclusters, np.unique(y))
+            model = ClusterModel(microclusters, np.unique(y))
+            if len(microclusters) > 0:
+                self.models.append(model)
 
-        if len(microclusters) > 0:
-            self.models.append(model)
+        #Calculate the heuristic values - Iterate over all of the models in the ensemble
+        for model in self.models:
+            #Get the model's closest microcluster and its corresponding distance for each X
+            closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
+            model_label = [model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model]
+
+            #Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
+            associations = [model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist
+
+            #Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
+            purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
+            
+            #Compute the vector containing if the classification are correct or not
+            vector = [1 if y1 == y2 else 0 for y1, y2 in zip(y, model_label)]
+
+            #Compute the Point-biserial correlation coefficients between the heuristic values and the vector
+            self.association_coefficients.append(pointbiserialr(associations, vector).statistic)
+            self.purity_coefficients.append(pointbiserialr(purities, vector).statistic)
 
         self.before_offline_phase = False
         
         return self
 
 
-    def predict_one(self, X, y=None):
+    def predict_one(self, X, y):
         """Represents the online phase. Equivalent to predict_many() with only one sample. Receives only one sample, predict its label if it's 
         within the decision boundary of the ensemble. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is 
         performed.
@@ -81,12 +108,12 @@ class Echo(NoveltyDetectionClassifier):
         ----------
         X : dict
             Sample
-        y : int, optional
-            True y value of the sample, by default None
+        y : int
+            True y value of the sample
         """
         return self.predict_many(np.array(list(X.values()))[None,:], [y])
 
-    def predict_many(self, X, y=None):
+    def predict_many(self, X, y):
         """Represents the online phase. Receives multiple samples, for each sample predict its label predict its label if it's within the decision 
         boundary of the ensemble. Otherwise, if it's unknown, it is added to the short term memory and novelty detection is performed once the trigger has been reached.
 
@@ -94,8 +121,8 @@ class Echo(NoveltyDetectionClassifier):
         ----------
         X : pandas.DataFrame or numpy.ndarray
             Samples
-        y : list of int, optional
-            True y values of the samples, by default None
+        y : list of int
+            True y values of the samples
 
         Returns
         -------
@@ -114,7 +141,7 @@ class Echo(NoveltyDetectionClassifier):
             X = X.to_numpy() #Converting DataFrame to numpy array
 
         f_outliers = check_f_outlier(X, self.models)
-        closest_model_cluster, y_preds = self._majority_voting(X, True)
+        closest_model_cluster, average_confidences, y_preds = self._majority_voting(X, True)
 
         pred_label = []
         for i in range(len(X)):
@@ -160,30 +187,51 @@ class Echo(NoveltyDetectionClassifier):
                     #Remove all instances from the buffer since if they were not detected as a novel classes, they are classified as per ECHO paper
                     for i in range(len(self.short_mem)):
                         self._remove_sample_from_short_mem(0)
-                    
+
+                #Add point and confidence to window
+                self.window.append(ShortMemInstance(X[i], self.sample_counter, y[i], pred_label[-1]))
+                self.confidence_window.append(average_confidences[i])
+
+                #TODO: Change Detection Technique
+                
+                #TODO: Update classifier
+                #If change is greater than threshold
+                #if average_confidences[i] < threshold:
+                    #Request for true label
+                #Create training set and train new model
+                #Replace oldest model with new model
+                #self.models[0] = new_model
+
         return np.array(pred_label)
     
     def _majority_voting(self, X, return_labels=True):
         closest_clusters = []
         labels = []
         dists = []
-        associations = []
-        purities = []
+        confidences = []
         
         #Iterate over all of the models in the ensemble
-        for model in self.models:
+        for i, model in enumerate(self.models):
             #Get the model's closest microcluster and its corresponding distance for each X
             closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
             closest_clusters.append(closest_clusters_model)
-            labels.append([model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model])
+            model_label = [model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model]
+            labels.append(model_label)
             dists.append(dist)
 
-            #Calculate the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
-            associations.append([model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist)
+            #Compute the heuristic values
+            #Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
+            associations = [model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist
+            #Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
+            purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
 
-            #Calculate the purity with: {Number of samples of the most occuring class} / {Number of all samples}
-            purities.append(np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model]))
-            
+            #Compute the confidence score on each X sample using the dot product between the heuristics and coefficients
+            confidences.append(np.dot(associations, self.association_coefficients[i]) + np.dot(purities, self.purity_coefficients[i]))
+
+        #Normalize the confidence score between 0 and 1 and compute the average for each sample independantly
+        scaler = MinMaxScaler()
+        average_confidences = np.mean(scaler.fit_transform(confidences), axis=0)
+
         #From all the closest microclusters of each model, get the index of the closest model for each X
         best_models = np.argmin(dists, axis=0)
         
@@ -195,9 +243,9 @@ class Echo(NoveltyDetectionClassifier):
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
         # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
         if return_labels:
-            return closest_model_cluster, get_most_occuring_by_column(labels)
+            return closest_model_cluster, average_confidences, get_most_occuring_by_column(labels)
         else:
-            return closest_model_cluster
+            return closest_model_cluster, average_confidences
     
     def _novelty_detect(self):
         if self.verbose > 1: print("Novelty detection started")

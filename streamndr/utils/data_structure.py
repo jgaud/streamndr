@@ -370,10 +370,11 @@ class ShortMemInstance:
     y_true : int
         The true value of the class
     """
-    def __init__(self, point, timestamp, y_true=None):
+    def __init__(self, point, timestamp, y_true=None, y_pred=None):
         self.point = point
         self.timestamp = timestamp
         self.y_true = y_true
+        self.y_pred = y_pred
 
     def __eq__(self, other):
         """Elements are equal if they have the same values for all variables.
