@@ -8,14 +8,14 @@ LONG_DESCRIPTION_CONTENT_TYPE = "text/markdown"
 URL = "https://jgaud.github.io/streamndr/"
 EMAIL = "jean-gabrielgaudreault@outlook.com"
 AUTHOR = "Jean-Gabriel Gaudreault"
-REQUIRES_PYTHON = ">=3.6.0"
+REQUIRES_PYTHON = ">=3.9.0"
 
 # Requirements
 base_packages = [
     "scikit-learn>=1.2.1",
     "pandas>=1.4.2",
     "numpy>=1.23.5",
-    "river>=0.15.0",
+    "river>=0.21.0",
     "clusopt-core>=1.0.0"
 ]
 
@@ -49,7 +49,6 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: PyPy",

@@ -31,8 +31,8 @@ class TTD(metrics.base.MultiClassMetric):
         self.time_since_first_seen = dict()
         self.time_to_detection = dict()
 
-    def update(self, y_true, y_pred, sample_weight=1.0):
-        super().update(y_true, y_pred, sample_weight)
+    def update(self, y_true, y_pred, w=1.0):
+        super().update(y_true, y_pred, w)
         
         if (not y_true in self.time_since_first_seen) and (not y_true in self.cm._init_classes):
             self.time_since_first_seen[y_true] = 0
@@ -42,8 +42,6 @@ class TTD(metrics.base.MultiClassMetric):
 
         elif (y_true in self.time_since_first_seen) and (not y_true in self.time_to_detection) and (y_pred in self.cm._init_classes.union({-1})):
             self.time_since_first_seen[y_true] += 1
-        
-        return self
     
     def get(self):
         tmp = dict()
