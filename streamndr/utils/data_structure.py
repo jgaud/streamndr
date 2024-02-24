@@ -409,7 +409,7 @@ class ShortMem:
 
     Attributes
     ----------
-    list : list of tuples (hash, ShortMemInstance)
+    list : list of tuples (hash, [ShortMemInstance1, ShortMemInstance2, ...])
         List containing the instances and their corresponding hash compiled from their point
     dictionary : dictionary
         Contains for each hash its index in the list
@@ -426,10 +426,16 @@ class ShortMem:
         instance : ShortMemInstance
             Element to add
         """
-        index = len(self.list)
         h = hashlib.sha256(instance.point.tobytes()).hexdigest()
-        self.list.append((h, instance))
-        self.dictionary[h] = index
+
+        # Check if the hash already exists
+        if h in self.dictionary:
+            # Add the instance to the existing list of instances for that hash
+            self.list[self.dictionary[h]][1].append(instance)
+        else:
+            index = len(self.list)
+            self.list.append((h, [instance]))
+            self.dictionary[h] = index
 
     def remove(self, index):
         """Remove the element at the given index from the data structure.
@@ -440,11 +446,19 @@ class ShortMem:
             Index of the element to remove
         """
         if 0 <= index < len(self.list):
-            instance = self.list.pop(index)
-            del self.dictionary[instance[0]]
+            instance_list = self.list[index][1]
 
-            for i in range(index, len(self.list)):
-                self.dictionary[self.list[i][0]] = i
+            # If there's only one instance for the hash, remove the entire entry
+            if len(instance_list) == 1:
+                del self.dictionary[self.list[index][0]]
+                self.list.pop(index)
+
+                # Update indices for remaining entries
+                for i in range(index, len(self.list)):
+                    self.dictionary[self.list[i][0]] = i
+            else:
+                # If there are multiple instances, remove just one instance
+                instance_list.pop(-1)
 
     def index(self, instance):
         """Get the index of the given element.
@@ -472,7 +486,7 @@ class ShortMem:
         list of ShortMemInstance
             All ShortMemInstances instances within the data structure
         """
-        return [instance[1] for instance in self.list]
+        return [instance for _, instances_list in self.list for instance in instances_list]
     
     def get_instance(self, index):
         """Return specific ShortMemInstance at given index
@@ -488,7 +502,7 @@ class ShortMem:
             The instance at the given index, None if index not found
         """
         if 0 <= index < len(self.list):
-            return self.list[index][1]
+            return self.list[index][1][0]
     
     def get_all_points(self):
         """Returns all points within the data structure
@@ -498,7 +512,7 @@ class ShortMem:
         np.ndarray
             All points contained in the data structure
         """
-        return np.array([instance[1].point for instance in self.list])
+        return np.array([instance.point for _, instances_list in self.list for instance in instances_list])
     
     def __len__(self):
         return len(self.list)

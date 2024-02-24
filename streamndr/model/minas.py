@@ -417,7 +417,8 @@ class Minas(base.MiniBatchClassifier):
 
     def _trigger_forget(self):
         for cluster in list(self.microclusters):
-            if cluster.timestamp < self.sample_counter - self.window_size:
+            # Remove cluster if it hasn't been updated for more than window_size time and there is more than 1 cluster
+            if (cluster.timestamp < self.sample_counter - self.window_size) and (len(self.microclusters) > 1):
                 if self.verbose > 1:
                     print("Forgetting cluster: ", cluster)
                 elif self.verbose > 0:
