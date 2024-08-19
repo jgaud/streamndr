@@ -80,10 +80,10 @@ for x, y_true in zip(X_test, y_test):
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
     
     if y_pred is not None: #Update our metrics
-        conf_matrix = conf_matrix.update(y_true, y_pred[0])
-        m_new = m_new.update(y_true, y_pred[0])
-        f_new = f_new.update(y_true, y_pred[0])
-        err_rate = err_rate.update(y_true, y_pred[0])
+        conf_matrix.update(y_true, y_pred[0])
+        m_new.update(y_true, y_pred[0])
+        f_new.update(y_true, y_pred[0])
+        err_rate.update(y_true, y_pred[0])
 
 
     #Show progress
@@ -100,9 +100,9 @@ print(m_new) #Percentage of novel class instances misclassified as known.
 print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
-MNew: 15.86% <br/>
-FNew: 43.40% <br/>
-ErrRate: 38.48% <br/>
+MNew: 17.15% <br/>
+FNew: 40.11% <br/>
+ErrRate: 36.80% <br/>
 
 
 ### ECSMiner-WF
@@ -125,10 +125,10 @@ for x, y_true in zip(X_test, y_test):
     y_pred = clf.predict_one(x) #predict_one takes python dictionaries as per River API
 
     if y_pred is not None: #Update our metrics
-        conf_matrix = conf_matrix.update(y_true, y_pred[0])
-        m_new = m_new.update(y_true, y_pred[0])
-        f_new = f_new.update(y_true, y_pred[0])
-        err_rate = err_rate.update(y_true, y_pred[0])
+        conf_matrix.update(y_true, y_pred[0])
+        m_new.update(y_true, y_pred[0])
+        f_new.update(y_true, y_pred[0])
+        err_rate.update(y_true, y_pred[0])
 ```
 
 ```python
@@ -138,6 +138,6 @@ print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
 
-MNew: 32.78% <br/>
-FNew: 31.88% <br/>
-ErrRate: 34.18% <br/>
+MNew: 28.98% <br/>
+FNew: 30.26% <br/>
+ErrRate: 32.40% <br/>

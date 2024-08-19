@@ -55,8 +55,8 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
         return associated_classes_conf_matrix
     
         
-    def update(self, y_true, y_pred, sample_weight=1.0):
-        super().update(y_true, y_pred, sample_weight)
+    def update(self, y_true, y_pred, w=1.0):
+        super().update(y_true, y_pred, w)
         
         known_class = int(y_true in self._init_classes)
         pred_known_class = int(y_pred in self._init_classes)
@@ -67,11 +67,9 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
             self.fe += 1
         
         self.novel_cm.update(1-known_class, 1-pred_known_class)
-        
-        return self
 
-    def revert(self, y_true, y_pred, sample_weight=1.0):
-        super.revert(self, y_true, y_pred, sample_weight)
+    def revert(self, y_true, y_pred, w=1.0):
+        super.revert(self, y_true, y_pred, w)
         
         known_class = int(y_true in self._init_classes)
         pred_known_class = int(y_pred in self._init_classes)
@@ -82,8 +80,6 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
                 self.fe -= 1
         
         self.novel_cm.revert(1-known_class, 1-pred_known_class)
-        
-        return self
     
     def true_positives_novelty(self):
         return self.novel_cm.true_positives(1)

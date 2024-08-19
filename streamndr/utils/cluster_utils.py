@@ -31,7 +31,7 @@ def get_closest_clusters(X, centroids):
     """
     if len(centroids) == 0:
         print("No clusters")
-        return np.full(len(X), -1)
+        return np.full(len(X), -1), -1
         
     centroids = np.array(centroids)
     norm_dists = np.zeros((X.shape[0],centroids.shape[0]))
