@@ -2,9 +2,9 @@ import numpy as np
 import copy
 import random
 
-from streamndr.utils.data_structure import MicroCluster, ShortMemInstance, ImpurityBasedCluster
+from streamndr.utils.data_structure import ShortMemInstance, ImpurityBasedCluster
 
-__all__ = ["MicroCluster", "ShortMemInstance"]
+__all__ = ["MCIKMeans"]
 
 class MCIKMeans():
     """Implementation of K-Means with Minimization of Cluster Impurity (MCI-Kmeans), as described in [1].

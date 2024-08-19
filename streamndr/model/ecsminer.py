@@ -122,7 +122,7 @@ class ECSMiner(NoveltyDetectionClassifier):
             
             microclusters = generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm, random_state=self.random_state) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
             
-            model = ClusterModel(microclusters, np.unique(y_chunk))
+            model = ClusterModel(microclusters, list(np.unique(y_chunk)))
             
             if len(microclusters) > 0:
                 self.models.append(model)
@@ -247,7 +247,7 @@ class ECSMiner(NoveltyDetectionClassifier):
                     points = np.vstack([inst.point for inst in self.labeled_buffer])
                     true_labels = np.array([inst.y_true for inst in self.labeled_buffer])
                     new_microclusters = generate_microclusters(points, true_labels, self.sample_counter, self.K, min_samples=3, algorithm=self.init_algorithm, random_state=self.random_state)
-                    new_model = ClusterModel(new_microclusters, np.unique(true_labels))
+                    new_model = ClusterModel(new_microclusters, list(np.unique(true_labels)))
 
                     #Update the existing ensemble
                     self.models.append(new_model)

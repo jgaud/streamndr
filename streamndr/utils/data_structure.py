@@ -50,7 +50,8 @@ class MicroCluster(object):
         self.label = label
 
         if instances is not None:
-            self.instances = instances.tolist()
+            if not isinstance(instances, list):
+                self.instances = instances.tolist()
             self.n = len(instances)
             self.linear_sum = instances.sum(axis=0)
         

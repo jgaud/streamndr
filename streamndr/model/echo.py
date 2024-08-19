@@ -1,8 +1,10 @@
-from collections import Counter, deque
+from collections import deque
+from hmac import new
+from operator import index
 from random import random
 import pandas as pd
 import numpy as np
-from scipy.stats import pointbiserialr
+from scipy.stats import pointbiserialr, beta
 from sklearn.preprocessing import MinMaxScaler
 
 from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
@@ -17,6 +19,7 @@ class Echo(NoveltyDetectionClassifier):
                  min_examples_cluster,
                  ensemble_size,
                  W,
+                 tau=0.9,
                  verbose=0,
                  random_state=None, #Note: Due to the nature of the algorithm, a same seed won't lead to the exact same results
                  init_algorithm="mcikmeans"):
@@ -25,7 +28,8 @@ class Echo(NoveltyDetectionClassifier):
         self.K = K
         self.min_examples_cluster = min_examples_cluster
         self.ensemble_size = ensemble_size
-        self.W = W
+        self.W = W # Maximum allowable size for the dynamic sliding window
+        self.tau = tau # Confidence threshold
 
         accepted_algos = ['kmeans','mcikmeans']
         if init_algorithm not in accepted_algos:
@@ -46,7 +50,7 @@ class Echo(NoveltyDetectionClassifier):
         pass
 
     def learn_many(self, X, y, w=1.0):
-        """Represents the offline phase of the alsgorithm. Receives a number of samples and their given labels and learns all of the known classes.
+        """Represents the offline phase of the algorithm. Receives a number of samples and their given labels and learns all of the known classes.
 
         Parameters
         ----------
@@ -71,7 +75,7 @@ class Echo(NoveltyDetectionClassifier):
         for i in range(0, self.ensemble_size):
             microclusters = generate_microclusters(X, y, timestamp, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=None)
 
-            model = ClusterModel(microclusters, np.unique(y))
+            model = ClusterModel(microclusters, list(np.unique(y)))
             if len(microclusters) > 0:
                 self.models.append(model)
 
@@ -184,23 +188,24 @@ class Echo(NoveltyDetectionClassifier):
                         #Change the predicted label for the new class label
                         pred_label[-1] = novel_cluster.label
 
-                    #Remove all instances from the buffer since if they were not detected as a novel classes, they are classified as per ECHO paper
-                    for i in range(len(self.short_mem)):
+                        #Add the novel cluster to all models
+                        for model in self.models:
+                            model.microclusters.append(novel_cluster)
+                            model.labels.append(novel_cluster.label)
+
+                    #Remove all instances from the buffer since if they were not detected as a novel classes, they are classified, as per ECHO paper
+                    for _ in range(len(self.short_mem)):
                         self._remove_sample_from_short_mem(0)
 
-                #Add point and confidence to window
-                self.window.append(ShortMemInstance(X[i], self.sample_counter, y[i], pred_label[-1]))
-                self.confidence_window.append(average_confidences[i])
+            #Add point and confidence to window
+            self.window.append(ShortMemInstance(X[i], self.sample_counter, y[i], pred_label[-1]))
+            self.confidence_window.append(average_confidences[i])
 
-                #TODO: Change Detection Technique
-                
-                #TODO: Update classifier
-                #If change is greater than threshold
-                #if average_confidences[i] < threshold:
-                    #Request for true label
-                #Create training set and train new model
-                #Replace oldest model with new model
-                #self.models[0] = new_model
+            change_point = self._detect_change()
+
+            if change_point != -1:
+                self._update_classifier(change_point)
+
 
         return np.array(pred_label)
     
@@ -248,34 +253,84 @@ class Echo(NoveltyDetectionClassifier):
             return closest_model_cluster, average_confidences
     
     def _novelty_detect(self):
-        if self.verbose > 1: print("Novelty detection started")
+        if self.verbose > 1:
+            print("Novelty detection started")
+
         X = self.short_mem.get_all_points()
         new_class_vote = 0
+        potential_novel_points_idx = {index: 0 for index in range(len(X))}
 
-        potential_novel_points_idx = []
-        #Computing qNSC for each model in our ensemble
         for model in self.models:
             qnscs = qnsc(X, model.microclusters, self.min_examples_cluster)
-            potential_points = []
-            total_instances = 0
-            for i, point in enumerate(X):
-                if qnscs[i] > 0:
-                    potential_points.append(point)
-                    total_instances += 1
-                    potential_novel_points_idx.append(i)
-            if total_instances > 0 and self.verbose > 1:
-                print(f"Total instances in F-outliers: {total_instances}")
+            nb_potential_novel_points = 0
+
+            for i, qnsc_value in enumerate(qnscs):
+                if qnsc_value > 0:
+                    potential_novel_points_idx[i] += 1
+                    nb_potential_novel_points += 1
             
-            if total_instances > self.min_examples_cluster: 
+            if nb_potential_novel_points > self.min_examples_cluster:
                 new_class_vote += 1
 
         if new_class_vote == len(self.models):
-            #Get the indices of all points which had a positive qnsc for all models
-            novel_points_idx = [item for item, count in Counter(potential_novel_points_idx).items() if count == len(self.models)]
-            novel_points = [X[i] for i in novel_points_idx]
-            
-            label = max(set(element for sublist in self.models for element in sublist.labels)) + 1
-            return MicroCluster(label, instances=novel_points, timestamp=self.sample_counter, keep_instances=False)
+            novel_points_idx = [index for index, vote in potential_novel_points_idx.items() if vote == len(self.models)]
+
+            if len(novel_points_idx) >= self.min_examples_cluster:
+                novel_points = [X[i] for i in novel_points_idx]
+                label = max(set(element for sublist in self.models for element in sublist.labels)) + 1
+                return MicroCluster(label, instances=np.array(novel_points), timestamp=self.sample_counter, n_label_instances=len(novel_points))
         
+        return None
+        
+    def _detect_change(self, alpha=0.05, gamma=100):
+        n = len(self.confidence_window)
+        if n <= 2 * gamma:
+            return -1
+        
+        threshold = -np.log(alpha)
+        omega_n = 0
+        
+        if n <= self.W and np.mean(self.confidence_window) > 0.3:
+            for k in range(gamma, n - gamma):
+                pre_beta = beta.fit(self.confidence_window[:k], floc=0, fscale=1)
+                post_beta = beta.fit(self.confidence_window[k:], floc=0, fscale=1)
+                
+                S_k_n = sum(np.log(beta.pdf(self.confidence_window[k:], *post_beta) / 
+                                    beta.pdf(self.confidence_window[k:], *pre_beta)))
+                
+                omega_n = max(omega_n, S_k_n)
+            
+            if omega_n >= threshold:
+                return np.argmax([sum(np.log(beta.pdf(self.confidence_window[k:], *post_beta) / 
+                                            beta.pdf(self.confidence_window[k:], *pre_beta)))
+                                for k in range(gamma, n - gamma)])
+        
+        return n if n > self.W or np.mean(self.confidence_window) <= 0.3 else -1
+    
+    def _update_classifier(self, change_point):
+        labeled_data = [instance for instance in self.window if instance.confidence <= self.tau]
+        unlabeled_data = [instance for instance in self.window if instance.confidence > self.tau]
+
+        training_data = labeled_data + unlabeled_data
+        X_train = np.array([instance.point for instance in training_data])
+        
+        # We only provide the true labels if the confidence is below the threshold
+        y_train = np.array([instance.y_true if instance.confidence <= self.tau else instance.y_pred for instance in training_data])
+        
+        new_model = self._train_new_model(np.array(X_train), np.array(y_train))
+        
+        if len(self.models) < self.ensemble_size:
+            self.models.append(new_model)
         else:
-            return None
+            # Replace the oldest model with the new one
+            oldest_model_index = np.argmin([model.microclusters[0].timestamp for model in self.models])
+            self.models[oldest_model_index] = new_model
+        
+        # Clear the window and confidence window from the change point onwards
+        self.window = deque(list(self.window)[change_point:], maxlen=self.W)
+        self.confidence_window = deque(list(self.confidence_window)[change_point:], maxlen=self.W)
+
+
+    def _train_new_model(self, X, y):
+        microclusters = generate_microclusters(X, y, self.sample_counter, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=None)
+        return ClusterModel(microclusters, list(np.unique(y)))
