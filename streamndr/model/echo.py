@@ -87,7 +87,7 @@ class Echo(NoveltyDetectionClassifier):
             model_label = [model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model]
 
             # Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
-            associations = [model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist
+            associations = [model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model] - dist
 
             # Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
             purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
@@ -229,7 +229,7 @@ class Echo(NoveltyDetectionClassifier):
 
             #Compute the heuristic values
             #Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
-            associations = [model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist
+            associations = [model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model] - dist
             #Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
             purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
 
