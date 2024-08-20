@@ -269,7 +269,7 @@ class Minas(NoveltyDetectionClassifier):
         if self.verbose > 1: print("Novelty detection started")
         possible_clusters = []
         X = self.short_mem.get_all_points()
-        K0 = min(self.kini, len(X)) #Can't create K clusters if K is higher than the number of samples
+        K0 = min(self.kini, len(X)) # Can't create K clusters if K is higher than the number of samples
 
         if self.cluster_algorithm == 'kmeans':
             cluster_clf = KMeans(n_clusters=K0, n_init='auto',

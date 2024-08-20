@@ -1,3 +1,4 @@
+from cProfile import label
 from collections import deque
 from hmac import new
 from operator import index
@@ -38,15 +39,15 @@ class Echo(NoveltyDetectionClassifier):
             self.init_algorithm = init_algorithm
 
         self.models = []
-        self.short_mem = ShortMem() #Potential novel class instances
+        self.short_mem = ShortMem() # Potential novel class instances
         self.association_coefficients = []
         self.purity_coefficients = []
-        self.confidence_window = deque(maxlen=W)
-        self.window = deque(maxlen=W)
+        self.confidence_window = deque(maxlen=self.W)
+        self.window = deque(maxlen=self.W)
 
     def learn_one(self, x, y, w=1.0):
-        #Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
-        #to arrive at once. It is only added as to follow River's API.
+        # Function used by river algorithms to learn one sample. It is not applicable to this algorithm since the offline phase requires all samples
+        # to arrive at once. It is only added as to follow River's API.
         pass
 
     def learn_many(self, X, y, w=1.0):
@@ -79,22 +80,22 @@ class Echo(NoveltyDetectionClassifier):
             if len(microclusters) > 0:
                 self.models.append(model)
 
-        #Calculate the heuristic values - Iterate over all of the models in the ensemble
+        # Calculate the heuristic values - Iterate over all of the models in the ensemble
         for model in self.models:
-            #Get the model's closest microcluster and its corresponding distance for each X
+            # Get the model's closest microcluster and its corresponding distance for each X
             closest_clusters_model, dist = get_closest_clusters(X, [microcluster.centroid for microcluster in model.microclusters])
             model_label = [model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model]
 
-            #Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
+            # Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
             associations = [model.microclusters[closest_cluster].radius for closest_cluster in closest_clusters_model] - dist
 
-            #Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
+            # Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
             purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
             
-            #Compute the vector containing if the classification are correct or not
+            # Compute the vector containing if the classification are correct or not
             vector = [1 if y1 == y2 else 0 for y1, y2 in zip(y, model_label)]
 
-            #Compute the Point-biserial correlation coefficients between the heuristic values and the vector
+            # Compute the Point-biserial correlation coefficients between the heuristic values and the vector
             self.association_coefficients.append(pointbiserialr(associations, vector).statistic)
             self.purity_coefficients.append(pointbiserialr(purities, vector).statistic)
 
@@ -204,6 +205,8 @@ class Echo(NoveltyDetectionClassifier):
             change_point = self._detect_change()
 
             if change_point != -1:
+                if self.verbose > 1:
+                    print("Change detected at point: ", change_point)
                 self._update_classifier(change_point)
 
 
@@ -281,43 +284,86 @@ class Echo(NoveltyDetectionClassifier):
                 return MicroCluster(label, instances=np.array(novel_points), timestamp=self.sample_counter, n_label_instances=len(novel_points))
         
         return None
-        
+
     def _detect_change(self, alpha=0.05, gamma=100):
-        n = len(self.confidence_window)
-        if n <= 2 * gamma:
-            return -1
+        """
+        Detect-Change algorithm implementation
         
-        threshold = -np.log(alpha)
+        Parameters:
+        alpha: Sensitivity
+        gamma: Cushion period size
+        W: The dynamic sliding window (list of confidence scores)
+        
+        Returns:
+        The change point if exists; -1 otherwise
+        """
+        Th = -np.log(alpha)
+        n = len(self.confidence_window)
         omega_n = 0
+        k_max = -1
+
+        confidence_list = list(self.confidence_window)
         
         if n <= self.W and np.mean(self.confidence_window) > 0.3:
             for k in range(gamma, n - gamma):
-                pre_beta = beta.fit(self.confidence_window[:k], floc=0, fscale=1)
-                post_beta = beta.fit(self.confidence_window[k:], floc=0, fscale=1)
+                # Estimate pre and post-beta distributions
+                pre_data = confidence_list[:k]
+                post_data = confidence_list[k:]
                 
-                S_k_n = sum(np.log(beta.pdf(self.confidence_window[k:], *post_beta) / 
-                                    beta.pdf(self.confidence_window[k:], *pre_beta)))
+                alpha0, beta0 = self._estimate_beta_params(pre_data)
+                alpha1, beta1 = self._estimate_beta_params(post_data)
                 
-                omega_n = max(omega_n, S_k_n)
-            
-            if omega_n >= threshold:
-                return np.argmax([sum(np.log(beta.pdf(self.confidence_window[k:], *post_beta) / 
-                                            beta.pdf(self.confidence_window[k:], *pre_beta)))
-                                for k in range(gamma, n - gamma)])
+                # Calculate S_k,n
+                S_k_n = self._calculate_S_k_n(post_data, alpha0, beta0, alpha1, beta1)
+                
+                # Update omega_n and k_max
+                if S_k_n > omega_n:
+                    omega_n = S_k_n
+                    k_max = k
+
+            if omega_n >= Th:
+                return k_max
+            else:
+                return -1
+        else:
+            print(f'Returning n because n={n} and mean={np.mean(self.confidence_window)}')
+            return n
+
+    def _estimate_beta_params(self, data):
+        """Estimate beta distribution parameters using method of moments"""
+        mean = np.mean(data)
+        var = np.var(data)
+        if var == 0:
+            return 1, 1  # Default to uniform distribution if variance is zero
+        alpha = mean * (mean * (1 - mean) / var - 1)
+        beta_param = (1 - mean) * (mean * (1 - mean) / var - 1)
+        return max(alpha, 0.01), max(beta_param, 0.01)  # Ensure positive parameters
+
+    def _calculate_S_k_n(self, data, alpha0, beta0, alpha1, beta1):
+        """Calculate S_k,n using log likelihood ratios"""
+        pdf1 = beta.pdf(data, alpha1, beta1)
+        pdf0 = beta.pdf(data, alpha0, beta0)
         
-        return n if n > self.W or np.mean(self.confidence_window) <= 0.3 else -1
+        # Avoid division by zero or log(0)
+        ratio = np.divide(pdf1, pdf0, out=np.ones_like(pdf1), where=pdf0!=0)
+        log_ratio = np.log(ratio, out=np.zeros_like(ratio), where=ratio>0)
+        
+        return np.sum(log_ratio)
     
     def _update_classifier(self, change_point):
-        labeled_data = [instance for instance in self.window if instance.confidence <= self.tau]
-        unlabeled_data = [instance for instance in self.window if instance.confidence > self.tau]
+        labeled_data = [self.window[i] for i, confidence in enumerate(self.confidence_window) if confidence <= self.tau]
+        unlabeled_data = [self.window[i] for i, confidence in enumerate(self.confidence_window) if confidence > self.tau]
 
-        training_data = labeled_data + unlabeled_data
-        X_train = np.array([instance.point for instance in training_data])
+        labeled_X = [instance.point for instance in labeled_data]
+        labeled_y = [instance.y_true for instance in labeled_data]
+
+        unlabeled_X = [instance.point for instance in unlabeled_data]
+        unlabeled_y = [instance.y_pred for instance in unlabeled_data]
+
+        X_train = np.array(labeled_X + unlabeled_X)
+        y_train = np.array(labeled_y + unlabeled_y)
         
-        # We only provide the true labels if the confidence is below the threshold
-        y_train = np.array([instance.y_true if instance.confidence <= self.tau else instance.y_pred for instance in training_data])
-        
-        new_model = self._train_new_model(np.array(X_train), np.array(y_train))
+        new_model = self._train_new_model(X_train, y_train)
         
         if len(self.models) < self.ensemble_size:
             self.models.append(new_model)
@@ -332,5 +378,6 @@ class Echo(NoveltyDetectionClassifier):
 
 
     def _train_new_model(self, X, y):
-        microclusters = generate_microclusters(X, y, self.sample_counter, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=None)
+        K0 = min(self.K, len(X)) # Can't create K clusters if K is higher than the number of samples
+        microclusters = generate_microclusters(X, y, self.sample_counter, K0, min_samples=0, algorithm=self.init_algorithm, random_state=None)
         return ClusterModel(microclusters, list(np.unique(y)))
