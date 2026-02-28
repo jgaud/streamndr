@@ -3,7 +3,7 @@ import pandas as pd
 
 from streamndr.model import ECSMiner
 from streamndr.utils.data_structure import ShortMemInstance, ClusterModel
-from streamndr.utils.cluster_utils import get_closest_clusters
+from streamndr.utils.cluster_utils import *
 
 __all__ = ["ECSMinerWF"]
 
@@ -79,7 +79,7 @@ class ECSMinerWF(ECSMiner):
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
         
-        f_outliers = self._check_f_outlier(X, self.models)
+        f_outliers = check_f_outlier(X, self.models)
         closest_model_cluster, y_preds = self._majority_voting(X)
 
         #If we have novel models, get the closest ones for all Xs
