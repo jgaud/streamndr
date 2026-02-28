@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from clusopt_core.cluster import CluStream
+try:
+    from clusopt_core.cluster import CluStream
+except ImportError:
+    CluStream = None
 from sklearn.cluster import KMeans
 from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
 
@@ -77,6 +80,11 @@ class Minas(NoveltyDetectionClassifier):
         accepted_algos = ['kmeans', 'clustream']
         if cluster_algorithm not in accepted_algos:
             raise ValueError(f"Invalid algorithm '{cluster_algorithm}'. Available algorithms: {', '.join(accepted_algos)}")
+        if cluster_algorithm == 'clustream' and CluStream is None:
+            raise ImportError(
+                "The 'clustream' algorithm requires the 'clusopt-core' package. "
+                "Install it with: pip install clusopt-core"
+            )
         self.cluster_algorithm = cluster_algorithm
 
         self.microclusters = []  # list of microclusters
