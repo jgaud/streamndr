@@ -26,7 +26,7 @@ class TTD(metrics.base.MultiClassMetric):
         if cm is None:
             cm = ConfusionMatrixNovelty(known_classes)
             
-        super(metrics.base.MultiClassMetric, self).__init__(cm)
+        super().__init__(cm)
         
         self.time_since_first_seen = dict()
         self.time_to_detection = dict()

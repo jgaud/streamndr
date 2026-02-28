@@ -1,4 +1,4 @@
-"""Novelty detection models"""
+"""Novelty detection metrics"""
 from .cer import CER
 from .confusion import ConfusionMatrixNovelty
 from .err_rate import ErrRate

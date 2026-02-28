@@ -74,11 +74,10 @@ class Minas(NoveltyDetectionClassifier):
         super().__init__(verbose, random_state)
         self.kini = kini
 
-        accepted_algos = ['kmeans','clustream']
+        accepted_algos = ['kmeans', 'clustream']
         if cluster_algorithm not in accepted_algos:
-            print('Available algorithms: {}'.format(', '.join(accepted_algos)))
-        else:
-            self.cluster_algorithm = cluster_algorithm
+            raise ValueError(f"Invalid algorithm '{cluster_algorithm}'. Available algorithms: {', '.join(accepted_algos)}")
+        self.cluster_algorithm = cluster_algorithm
 
         self.microclusters = []  # list of microclusters
 
@@ -127,6 +126,9 @@ class Minas(NoveltyDetectionClassifier):
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
+        y = np.asarray(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must contain the same number of samples.")
             
         self.microclusters = self._offline(X, y)
         self.before_offline_phase = False
@@ -178,6 +180,10 @@ class Minas(NoveltyDetectionClassifier):
         
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
+        if y is not None:
+            y = np.asarray(y)
+            if len(X) != len(y):
+                raise ValueError("X and y must contain the same number of samples.")
         
         # Finding closest clusters for received samples
         closest_clusters, _ = get_closest_clusters(X, [microcluster.centroid for microcluster in self.microclusters])
@@ -202,11 +208,13 @@ class Minas(NoveltyDetectionClassifier):
 
                 else:  # classify as unknown
                     pred_label.append(-1)
-                    self._label_as_unknown(X[i], y[i])
+                    y_i = y[i] if y is not None else None
+                    self._label_as_unknown(X[i], y_i)
 
             else: # classify as unknown
                 pred_label.append(-1)
-                self._label_as_unknown(X[i], y[i])
+                y_i = y[i] if y is not None else None
+                self._label_as_unknown(X[i], y_i)
    
         # forgetting mechanism
         if self.sample_counter % self.window_size == 0:

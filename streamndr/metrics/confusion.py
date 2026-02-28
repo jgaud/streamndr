@@ -1,5 +1,7 @@
 from river import metrics
 
+__all__ = ["ConfusionMatrixNovelty"]
+
 class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
     """Confusion Matrix for novelty detection in data streams.
 
@@ -69,15 +71,15 @@ class ConfusionMatrixNovelty(metrics.confusion.ConfusionMatrix):
         self.novel_cm.update(1-known_class, 1-pred_known_class)
 
     def revert(self, y_true, y_pred, w=1.0):
-        super.revert(self, y_true, y_pred, w)
+        super().revert(y_true, y_pred, w)
         
         known_class = int(y_true in self._init_classes)
         pred_known_class = int(y_pred in self._init_classes)
         
-        if known_class == 1:
+        if known_class == 0:
             self.nc_samples -= 1
-            if pred_known_class == 1 and y_true != y_pred:
-                self.fe -= 1
+        elif known_class == pred_known_class == 1 and y_true != y_pred:
+            self.fe -= 1
         
         self.novel_cm.revert(1-known_class, 1-pred_known_class)
     

@@ -22,7 +22,7 @@ class MNew(metrics.base.MultiClassMetric):
         if cm is None:
             cm = ConfusionMatrixNovelty(known_classes)
         
-        super(metrics.base.MultiClassMetric, self).__init__(cm)
+        super().__init__(cm)
     
     def get(self):
         fn = self.cm.false_negatives_novelty() #Number of novelties wrongly classified as known

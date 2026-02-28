@@ -4,7 +4,7 @@ import hashlib
 
 __all__ = ["MicroCluster", "ShortMemInstance", "ImpurityBasedCluster", "ClusterModel", "ShortMem"]
 
-class MicroCluster(object):
+class MicroCluster:
     """A representation of a cluster with compressed information.
 
     Parameters
@@ -46,12 +46,16 @@ class MicroCluster(object):
                  ):
 
         # TODO: remove instances entirely so it doesn't need to be stored in memory; Might not be possible because of _best_threshold used by MINAS which needs instances
-        super(MicroCluster, self).__init__()
+        super().__init__()
         self.label = label
 
         if instances is not None:
             if not isinstance(instances, list):
-                self.instances = instances.tolist()
+                instances_list = instances.tolist()
+            else:
+                instances_list = instances
+                instances = np.array(instances)
+            self.instances = instances_list
             self.n = len(instances)
             self.linear_sum = instances.sum(axis=0)
         
@@ -383,7 +387,7 @@ class ShortMemInstance:
 
         Parameters
         ----------
-        other : ShortMemInstance
+        other : ShortMemInstance or numpy.ndarray
             Other instance to compared to
 
         Returns
@@ -391,8 +395,11 @@ class ShortMemInstance:
         bool
             If the instances are equals or not
         """
-        if type(other) == np.ndarray:
+        if isinstance(other, np.ndarray):
             return np.all(self.point == other)
+        if isinstance(other, ShortMemInstance):
+            return np.all(self.point == other.point)
+        return NotImplemented
         
 class ClusterModel:
     """Data class which represent a model containing a list of microclusters and a list of labels which it was trained on
@@ -478,10 +485,11 @@ class ShortMem:
         int
             Index of the element, -1 if not found
         """
-        if type(instance) == np.ndarray:
+        if isinstance(instance, np.ndarray):
             return self.dictionary.get(hashlib.sha256(instance.tobytes()).hexdigest(), -1)
-        elif type(instance) == ShortMemInstance:
+        elif isinstance(instance, ShortMemInstance):
             return self.dictionary.get(hashlib.sha256(instance.point.tobytes()).hexdigest(), -1)
+        return -1
 
     def get_all_instances(self):
         """Returns all ShortMemInstances instances within the data structure
@@ -520,4 +528,4 @@ class ShortMem:
         return np.array([instance.point for _, instances_list in self.list for instance in instances_list])
     
     def __len__(self):
-        return len(self.list)
+        return sum(len(instances_list) for _, instances_list in self.list)

@@ -27,7 +27,7 @@ class CER(metrics.base.MultiClassMetric):
         if cm is None:
             cm = ConfusionMatrixNovelty(known_classes)
         
-        super(metrics.base.MultiClassMetric, self).__init__(cm)
+        super().__init__(cm)
     
     def get(self):
         associated_classes_conf_matrix = self.cm.get_associated_classes()
@@ -61,7 +61,7 @@ class CER(metrics.base.MultiClassMetric):
         float
             The Akaike Information Criterion (AIC)
         """
-        all_classes = self.cm.classes
+        all_classes = list(self.cm.classes)
         
         if -1 in all_classes:
             all_classes.remove(-1)
@@ -76,5 +76,5 @@ class CER(metrics.base.MultiClassMetric):
 
         try:
             return -2 * math.log(1-self.get()) + 2 * num_classes_detected / math.log(N)
-        except:
+        except (ZeroDivisionError, ValueError):
             return 0.0

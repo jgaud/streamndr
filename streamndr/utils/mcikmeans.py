@@ -45,7 +45,7 @@ class MCIKMeans():
         self.conditional_mode_max_iter = conditional_mode_max_iter
         self.random_state = random_state
 
-        if random_state != None:
+        if random_state is not None:
             random.seed(random_state)
 
         self.clusters = []
@@ -72,6 +72,8 @@ class MCIKMeans():
         unlabeled_samples = []
         
         nb_labeled_samples = len(X[y!=-1])
+        if nb_labeled_samples == 0:
+            raise ValueError("MCIKMeans requires at least one labeled sample (y != -1).")
         remaining = 0
         for label in np.unique(y):
             if label == -1:
@@ -93,14 +95,16 @@ class MCIKMeans():
 
         centroids = []
         for label in samples_per_class:
-            centroids.extend(self._init_centroids(samples_per_class[label], number_of_centroids[label]))
+            class_centroids = self._init_centroids(samples_per_class[label], number_of_centroids[label])
+            centroids.extend(class_centroids)
 
-            if (len(centroids) < number_of_centroids[label]) and (len(unlabeled_samples) > 0):
+            if (len(class_centroids) < number_of_centroids[label]) and (len(unlabeled_samples) > 0):
                 filling_samples = copy.deepcopy(unlabeled_samples)
 
-                while ((len(centroids) < number_of_centroids[label]) and (len(filling_samples) > 0)):
+                while ((len(class_centroids) < number_of_centroids[label]) and (len(filling_samples) > 0)):
                     choice = filling_samples.pop(random.randrange(len(filling_samples)))
                     centroids.append(choice)
+                    class_centroids.append(choice)
 
         for i in range(len(centroids)):
             self.clusters.append(ImpurityBasedCluster(i, centroids[i]))
@@ -195,7 +199,7 @@ class MCIKMeans():
             for i in range(total_nb_samples):
                 sample = None
 
-                if (len(_labeled_samples) > 0) and ((len(unlabeled_samples) == 0) or bool(random.getrandbits(1))):
+                if (len(_labeled_samples) > 0) and ((len(_unlabeled_samples) == 0) or bool(random.getrandbits(1))):
                     sample = _labeled_samples.pop(random.randrange(len(_labeled_samples)))
 
                 else:

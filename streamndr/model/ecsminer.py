@@ -7,7 +7,13 @@ from sklearn.metrics import accuracy_score
 from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
 
 from streamndr.utils.data_structure import ShortMemInstance, ClusterModel, ShortMem
-from streamndr.utils.cluster_utils import *
+from streamndr.utils.cluster_utils import (
+    check_f_outlier,
+    generate_microclusters,
+    get_closest_clusters,
+    get_most_occurring_by_column,
+    qnsc,
+)
 
 __all__ = ["ECSMiner"]
 
@@ -71,11 +77,10 @@ class ECSMiner(NoveltyDetectionClassifier):
         self.ensemble_size = ensemble_size
         self.T_l = T_l
 
-        accepted_algos = ['kmeans','mcikmeans']
+        accepted_algos = ['kmeans', 'mcikmeans']
         if init_algorithm not in accepted_algos:
-            print('Available algorithms: {}'.format(', '.join(accepted_algos)))
-        else:
-            self.init_algorithm = init_algorithm
+            raise ValueError(f"Invalid algorithm '{init_algorithm}'. Available algorithms: {', '.join(accepted_algos)}")
+        self.init_algorithm = init_algorithm
 
         self.models = []
         self.novel_models = []
@@ -108,6 +113,9 @@ class ECSMiner(NoveltyDetectionClassifier):
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
+        y = np.asarray(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must contain the same number of samples.")
             
         #The chunk size is equal to the number of samples given to learn divided by the size of the ensemble as one model is trained per chunk
         self.chunk_size = math.ceil(len(X)/self.ensemble_size)
@@ -117,8 +125,12 @@ class ECSMiner(NoveltyDetectionClassifier):
         
         #Separate data into {ensemble_size} chunks
         for i in range(0, self.ensemble_size):
-            X_chunk = X[i:i+self.chunk_size]
-            y_chunk = y[i:i+self.chunk_size]
+            start = i * self.chunk_size
+            end = start + self.chunk_size
+            X_chunk = X[start:end]
+            y_chunk = y[start:end]
+            if len(X_chunk) == 0:
+                break
             
             microclusters = generate_microclusters(X_chunk, y_chunk, timestamp, self.K, min_samples=3, algorithm=self.init_algorithm, random_state=self.random_state) #As per ECSMiner paper, any microcluster with less than 3 instances is discarded
             
@@ -177,6 +189,11 @@ class ECSMiner(NoveltyDetectionClassifier):
         
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
+        if y is None:
+            raise ValueError("ECSMiner requires true labels during online updates. Use ECSMinerWF for unlabeled streams.")
+        y = np.asarray(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must contain the same number of samples.")
         
         f_outliers = check_f_outlier(X, self.models)
         closest_model_cluster, y_preds = self._majority_voting(X)
@@ -237,8 +254,10 @@ class ECSMiner(NoveltyDetectionClassifier):
                 self.labeled_buffer.append(instance_to_label)
 
                 #Remove from short_term_memory if it was in there and is a known class
-                if any(instance_to_label.y_true in model.labels for model in self.models) and (instance_to_label in self.short_mem.get_all_instances()):
-                    self.short_mem.remove(instance_to_label)
+                if any(instance_to_label.y_true in model.labels for model in self.models):
+                    idx = self.short_mem.index(instance_to_label)
+                    if idx != -1:
+                        self._remove_sample_from_short_mem(idx)
 
                 if len(self.labeled_buffer) == self.chunk_size:
                     if self.verbose > 0: 
@@ -318,7 +337,7 @@ class ECSMiner(NoveltyDetectionClassifier):
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
         # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
         if return_labels:
-            return closest_model_cluster, get_most_occuring_by_column(labels)
+            return closest_model_cluster, get_most_occurring_by_column(labels)
         else:
             return closest_model_cluster
       
@@ -363,6 +382,8 @@ class ECSMiner(NoveltyDetectionClassifier):
             return None
         
     def _filter_buffer(self):
+        if len(self.short_mem) == 0:
+            return
         closest_model_cluster = self._majority_voting(self.short_mem.get_all_points(), False)
 
 
