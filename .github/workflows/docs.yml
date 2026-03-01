@@ -36,10 +36,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install typing_extensions
           pip install -e .
-          pip install zensical mkdocstrings[python] mkdocs-gen-files mkdocs-literate-nav
+          pip install mkdocs-material mkdocstrings[python] mkdocs-gen-files mkdocs-literate-nav
 
       - name: Build documentation
-        run: zensical build --clean
+        run: mkdocs build --clean
 
       - uses: actions/upload-pages-artifact@v4
         with:
