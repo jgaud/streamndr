@@ -5,13 +5,20 @@ on:
     branches: [ main, master ]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/configure-pages@v5
+
       - uses: actions/checkout@v4
 
       - name: Set up Python
@@ -29,7 +36,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install typing_extensions
           pip install -e .
-          pip install mkdocs-material mkdocstrings[python] mkdocs-gen-files mkdocs-literate-nav
+          pip install zensical mkdocstrings[python] mkdocs-gen-files mkdocs-literate-nav
 
-      - name: Deploy documentation
-        run: mkdocs gh-deploy --force
+      - name: Build documentation
+        run: zensical build --clean
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
