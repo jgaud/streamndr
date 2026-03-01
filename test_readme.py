@@ -34,30 +34,30 @@ known_classes = [0, 1]
 from streamndr.model import Minas
 from streamndr.metrics import ConfusionMatrixNovelty, MNew, FNew, ErrRate
 
-# clf = Minas(kini=100, cluster_algorithm='kmeans',
-#             window_size=600, threshold_strategy=1, threshold_factor=1.1,
-#             min_short_mem_trigger=100, min_examples_cluster=20, verbose=0, random_state=42)
+clf = Minas(kini=100, cluster_algorithm='clustream', 
+            window_size=600, threshold_strategy=1, threshold_factor=1.1, 
+            min_short_mem_trigger=100, min_examples_cluster=20, verbose=0, random_state=42)
 
-# clf.learn_many(np.array(X_train), np.array(y_train))
+clf.learn_many(np.array(X_train), np.array(y_train)) #learn_many expects numpy arrays or pandas dataframes
 
-# conf_matrix = ConfusionMatrixNovelty(known_classes)
-# m_new = MNew(known_classes)
-# f_new = FNew(known_classes)
-# err_rate = ErrRate(known_classes)
+conf_matrix = ConfusionMatrixNovelty(known_classes)
+m_new = MNew(known_classes)
+f_new = FNew(known_classes)
+err_rate = ErrRate(known_classes)
 
-# for i, (x, y_true) in enumerate(zip(X_test, y_test), 1):
-#     y_pred = clf.predict_one(x)
-#     if y_pred is not None:
-#         conf_matrix.update(y_true, y_pred[0])
-#         m_new.update(y_true, y_pred[0])
-#         f_new.update(y_true, y_pred[0])
-#         err_rate.update(y_true, y_pred[0])
-#     if i % 1000 == 0:
-#         print(f"  {i}/{len(X_test)}")
+for i, (x, y_true) in enumerate(zip(X_test, y_test), 1):
+    y_pred = clf.predict_one(x)
+    if y_pred is not None:
+        conf_matrix.update(y_true, y_pred[0])
+        m_new.update(y_true, y_pred[0])
+        f_new.update(y_true, y_pred[0])
+        err_rate.update(y_true, y_pred[0])
+    if i % 1000 == 0:
+        print(f"  {i}/{len(X_test)}")
 
-# print(m_new)
-# print(f_new)
-# print(err_rate)
+print(m_new)
+print(f_new)
+print(err_rate)
 
 
 print("\n=== Testing ECSMiner-WF ===")
@@ -84,3 +84,29 @@ for i, (x, y_true) in enumerate(zip(X_test, y_test), 1):
 print(m_new2)
 print(f_new2)
 print(err_rate2)
+
+
+print("\n=== Testing ECHO ===")
+from streamndr.model import Echo
+
+clf3 = Echo(K=50, min_examples_cluster=10, verbose=0, random_state=42, ensemble_size=7, W=500, tau=0.9, init_algorithm="kmeans")
+clf3.learn_many(np.array(X_train), np.array(y_train))
+
+conf_matrix3 = ConfusionMatrixNovelty(known_classes)
+m_new3 = MNew(known_classes)
+f_new3 = FNew(known_classes)
+err_rate3 = ErrRate(known_classes)
+
+for i, (x, y_true) in enumerate(zip(X_test, y_test), 1):
+    y_pred = clf3.predict_one(x, y_true)
+    if y_pred is not None:
+        conf_matrix3.update(y_true, y_pred[0])
+        m_new3.update(y_true, y_pred[0])
+        f_new3.update(y_true, y_pred[0])
+        err_rate3.update(y_true, y_pred[0])
+    if i % 1000 == 0:
+        print(f"  {i}/{len(X_test)}")
+
+print(m_new3)
+print(f_new3)
+print(err_rate3)
