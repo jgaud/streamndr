@@ -22,7 +22,7 @@ class ErrRate(metrics.base.MultiClassMetric):
         if cm is None:
             cm = ConfusionMatrixNovelty(known_classes)
         
-        super(metrics.base.MultiClassMetric, self).__init__(cm)
+        super().__init__(cm)
     
     def get(self):
         fp = self.cm.false_positives_novelty() #Number of known class samples wrongly classified as novelties

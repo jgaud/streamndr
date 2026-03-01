@@ -23,6 +23,8 @@ class NoveltyDetectionClassifier(base.MiniBatchClassifier):
         float
             Unknown rate
         """
+        if self.sample_counter == 0:
+            return 0.0
         return len(self.short_mem) / self.sample_counter
     
     def get_class_unknown_rate(self):
@@ -33,7 +35,11 @@ class NoveltyDetectionClassifier(base.MiniBatchClassifier):
         dict
             Dictionary containing the unknown rate of each class
         """
-        return {key: val / self.class_sample_counter[key] for key, val in self.nb_class_unknown.items()}
+        rates = {}
+        for key, val in self.nb_class_unknown.items():
+            total = self.class_sample_counter.get(key, 0)
+            rates[key] = (val / total) if total > 0 else 0.0
+        return rates
     
     def predict_proba_one(self,X):
         #Function used by river algorithms to get the probability of the prediction. It is not applicable to this algorithm since it only predicts labels. 
@@ -46,7 +52,10 @@ class NoveltyDetectionClassifier(base.MiniBatchClassifier):
         pass
 
     def _remove_sample_from_short_mem(self, index):
-        y_true = self.short_mem.get_instance(index).y_true
+        instance = self.short_mem.get_instance(index)
+        if instance is None:
+            return
+        y_true = instance.y_true
         if y_true is not None:
             self.nb_class_unknown[y_true] -= 1
         self.short_mem.remove(index)

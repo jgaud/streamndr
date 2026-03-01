@@ -3,7 +3,10 @@ import pandas as pd
 
 from streamndr.model import ECSMiner
 from streamndr.utils.data_structure import ShortMemInstance, ClusterModel
-from streamndr.utils.cluster_utils import *
+from streamndr.utils.cluster_utils import (
+    check_f_outlier,
+    get_closest_clusters,
+)
 
 __all__ = ["ECSMinerWF"]
 
@@ -78,6 +81,10 @@ class ECSMinerWF(ECSMiner):
         
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
+        if y is not None:
+            y = np.asarray(y)
+            if len(X) != len(y):
+                raise ValueError("X and y must contain the same number of samples.")
         
         f_outliers = check_f_outlier(X, self.models)
         closest_model_cluster, y_preds = self._majority_voting(X)

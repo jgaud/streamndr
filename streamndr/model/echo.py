@@ -1,20 +1,61 @@
-from cProfile import label
 from collections import deque
-from hmac import new
-from operator import index
-from random import random
 import pandas as pd
 import numpy as np
 from scipy.stats import pointbiserialr, beta
 from sklearn.preprocessing import MinMaxScaler
 
 from streamndr.model.noveltydetectionclassifier import NoveltyDetectionClassifier
-from streamndr.utils.cluster_utils import *
+from streamndr.utils.cluster_utils import (
+    check_f_outlier,
+    generate_microclusters,
+    get_closest_clusters,
+    get_most_occurring_by_column,
+    qnsc,
+)
 from streamndr.utils.data_structure import ClusterModel, MicroCluster, ShortMem, ShortMemInstance
 
 __all__ = ["Echo"]
 
 class Echo(NoveltyDetectionClassifier):
+    """Implementation of the ECHO algorithm for novelty detection. [1]
+
+    [1] Haque, Ahsanul, et al. "Efficient handling of concept drift and concept evolution over stream data."
+    2016 IEEE 32nd international conference on data engineering (ICDE). IEEE, 2016.
+
+    Parameters
+    ----------
+    K : int
+        Number of pseudopoints per classifier (number of K clusters for the clustering algorithm)
+    min_examples_cluster : int
+        Minimum number of examples to declare a novel class
+    ensemble_size : int
+        Number of classifiers to use to create the ensemble
+    W : int
+        Maximum allowable size for the dynamic sliding window
+    tau : float
+        Confidence threshold for labeling data points
+    verbose : int
+        Controls the level of verbosity, the higher, the more messages are displayed. Can be '1', '2', or '3'.
+    random_state : int
+        Seed for the random number generation. Note: Due to the nature of the algorithm, a same seed won't lead to the exact same results.
+    init_algorithm : str
+        Clustering algorithm to use to initialize the clusters, supports 'kmeans' and 'mcikmeans'
+
+    Attributes
+    ----------
+    models : list of ClusterModel
+        List containing the models of the ensemble.
+    short_mem : ShortMem
+        Buffer memory containing the samples labeled as unknown temporarily for the novelty detection process
+    association_coefficients : list of float
+        Point-biserial correlation coefficients for the association heuristic of each model
+    purity_coefficients : list of float
+        Point-biserial correlation coefficients for the purity heuristic of each model
+    confidence_window : deque
+        Sliding window of confidence scores
+    window : deque
+        Sliding window of ShortMemInstance samples
+    """
     def __init__(self, 
                  K,
                  min_examples_cluster,
@@ -32,11 +73,10 @@ class Echo(NoveltyDetectionClassifier):
         self.W = W # Maximum allowable size for the dynamic sliding window
         self.tau = tau # Confidence threshold
 
-        accepted_algos = ['kmeans','mcikmeans']
+        accepted_algos = ['kmeans', 'mcikmeans']
         if init_algorithm not in accepted_algos:
-            print('Available algorithms: {}'.format(', '.join(accepted_algos)))
-        else:
-            self.init_algorithm = init_algorithm
+            raise ValueError(f"Invalid algorithm '{init_algorithm}'. Available algorithms: {', '.join(accepted_algos)}")
+        self.init_algorithm = init_algorithm
 
         self.models = []
         self.short_mem = ShortMem() # Potential novel class instances
@@ -69,12 +109,16 @@ class Echo(NoveltyDetectionClassifier):
         """
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
+        y = np.asarray(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must contain the same number of samples.")
 
         # in offline phase, consider all instances arriving at the same time in the microclusters:
         timestamp = len(X)
 
         for i in range(0, self.ensemble_size):
-            microclusters = generate_microclusters(X, y, timestamp, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=None)
+            state = None if self.random_state is None else self.random_state + i
+            microclusters = generate_microclusters(X, y, timestamp, self.K, min_samples=0, algorithm=self.init_algorithm, random_state=state)
 
             model = ClusterModel(microclusters, list(np.unique(y)))
             if len(microclusters) > 0:
@@ -87,7 +131,7 @@ class Echo(NoveltyDetectionClassifier):
             model_label = [model.microclusters[closest_cluster].label for closest_cluster in closest_clusters_model]
 
             # Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
-            associations = [model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model] - dist
+            associations = np.array([model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model]) - dist
 
             # Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
             purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
@@ -144,6 +188,9 @@ class Echo(NoveltyDetectionClassifier):
         
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy() #Converting DataFrame to numpy array
+        y = np.asarray(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must contain the same number of samples.")
 
         f_outliers = check_f_outlier(X, self.models)
         closest_model_cluster, average_confidences, y_preds = self._majority_voting(X, True)
@@ -229,7 +276,7 @@ class Echo(NoveltyDetectionClassifier):
 
             #Compute the heuristic values
             #Compute the association with: {Radius of closest microcluster} - {Distance of x from microcluster's center}
-            associations = [model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model] - dist
+            associations = np.array([model.microclusters[closest_cluster].max_distance for closest_cluster in closest_clusters_model]) - dist
             #Compute the purity with: {Number of samples of the most occuring class} / {Number of all samples}
             purities = np.array([model.microclusters[closest_cluster].n_label_instances for closest_cluster in closest_clusters_model]) / np.array([model.microclusters[closest_cluster].n for closest_cluster in closest_clusters_model])
 
@@ -251,7 +298,7 @@ class Echo(NoveltyDetectionClassifier):
         #Return the list of tuples (index of closest model, index of closest microcluster within that model), 
         # and a list containing the label Y with the most occurence between all of the models (majority voting) for each X. 
         if return_labels:
-            return closest_model_cluster, average_confidences, get_most_occuring_by_column(labels)
+            return closest_model_cluster, average_confidences, get_most_occurring_by_column(labels)
         else:
             return closest_model_cluster, average_confidences
     
@@ -379,5 +426,5 @@ class Echo(NoveltyDetectionClassifier):
 
     def _train_new_model(self, X, y):
         K0 = min(self.K, len(X)) # Can't create K clusters if K is higher than the number of samples
-        microclusters = generate_microclusters(X, y, self.sample_counter, K0, min_samples=0, algorithm=self.init_algorithm, random_state=None)
+        microclusters = generate_microclusters(X, y, self.sample_counter, K0, min_samples=0, algorithm=self.init_algorithm, random_state=self.random_state)
         return ClusterModel(microclusters, list(np.unique(y)))

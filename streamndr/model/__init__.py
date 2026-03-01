@@ -1,13 +1,14 @@
 """Novelty detection models"""
-from .minas import Minas
+from .echo import Echo
 from .ecsminer import ECSMiner
 from .ecsminerwf import ECSMinerWF
-from .echo import Echo
+from .minas import Minas
+from .noveltydetectionclassifier import NoveltyDetectionClassifier
 
 __all__ = [
-    "Minas",
+    "Echo",
     "ECSMiner",
     "ECSMinerWF",
-    "Echo",
+    "Minas",
     "NoveltyDetectionClassifier",
 ]

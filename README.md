@@ -24,6 +24,7 @@ StreamNDR implements in Python various algorithms for novelty detection that hav
 - MINAS [[1]](#1)
 - ECSMiner [[2]](#2)
 - ECSMiner-WF (Version of ECSMiner [[2]](#2) without feedback, as proposed in [[1]](#1))
+- ECHO [[3]](#3)
 
 Full documentation is available [here](https://jgaud.github.io/streamndr/).
 
@@ -41,7 +42,7 @@ pip install streamndr
 
 ## ⚡️ Quickstart
 
-As a quick example, we'll train two models (MINAS and ECSMiner-WF) to classify a synthetic dataset created using [RandomRBF](https://riverml.xyz/dev/api/datasets/synth/RandomRBF/). The models are trained on only two of the four generated classes ([0,1]) and will try to detect the other classes ([2,3]) as novelty patterns in the dataset in an online fashion.
+As a quick example, we'll train three models (MINAS, ECSMiner-WF, and ECHO) to classify a synthetic dataset created using [RandomRBF](https://riverml.xyz/dev/api/datasets/synth/RandomRBF/). The models are trained on only two of the four generated classes ([0,1]) and will try to detect the other classes ([2,3]) as novelty patterns in the dataset in an online fashion.
 
 Let's first generate the dataset.
 ```python
@@ -165,9 +166,47 @@ print(f_new) #Percentage of known classes misclassified as novel.
 print(err_rate) #Total misclassification error percentage
 ```
 
-MNew: 28.98% <br/>
-FNew: 30.26% <br/>
-ErrRate: 32.40% <br/>
+MNew: 60.93% <br/>
+FNew: 26.78% <br/>
+ErrRate: 39.40% <br/>
+
+
+### ECHO
+Let's train our ECHO model on the offline (known) data. Note that ECHO requires the true label during the online phase.
+
+```python
+from streamndr.model import Echo
+clf = Echo(K=50, min_examples_cluster=10, verbose=1, random_state=42, ensemble_size=7, W=500, tau=0.9, init_algorithm="kmeans")
+clf.learn_many(np.array(X_train), np.array(y_train))
+```
+Once again, let's use our model in an online fashion.
+```python
+conf_matrix = ConfusionMatrixNovelty(known_classes)
+m_new = MNew(known_classes)
+f_new = FNew(known_classes)
+err_rate = ErrRate(known_classes)
+
+for x, y_true in zip(X_test, y_test):
+
+    y_pred = clf.predict_one(x, y_true) #predict_one takes a python dictionary and the true label
+
+    if y_pred is not None: #Update our metrics
+        conf_matrix.update(y_true, y_pred[0])
+        m_new.update(y_true, y_pred[0])
+        f_new.update(y_true, y_pred[0])
+        err_rate.update(y_true, y_pred[0])
+```
+
+```python
+#print(conf_matrix) #Shows the confusion matrix of the given problem, can be very wide due to one class being detected as multiple Novelty Patterns
+print(m_new) #Percentage of novel class instances misclassified as known.
+print(f_new) #Percentage of known classes misclassified as novel.
+print(err_rate) #Total misclassification error percentage
+```
+
+MNew: 24.20% <br/>
+FNew: 16.16% <br/>
+ErrRate: 22.74% <br/>
 
 ## Special Thanks
 Special thanks goes to Vítor Bernardes, from which some of the code for MINAS is based on their [implementation](https://github.com/vbernardes/minas).
@@ -179,8 +218,5 @@ de Faria, E.R., Ponce de Leon Ferreira Carvalho, A.C. & Gama, J. MINAS: multicla
 <a id="2">[2]</a>
 M. Masud, J. Gao, L. Khan, J. Han and B. M. Thuraisingham, "Classification and Novel Class Detection in Concept-Drifting Data Streams under Time Constraints," in IEEE Transactions on Knowledge and Data Engineering, vol. 23, no. 6, pp. 859-874, June 2011, doi: 10.1109/TKDE.2010.61.
 
-## 🏫 Affiliations
-
-<p align="center">
-    <img src="http://www.uottawa.ca/brand/sites/www.uottawa.ca.brand/files/uottawa_hor_wg9.png" alt="FZI Logo" height="200"/>
-</p>
+<a id="3">[3]</a>
+A. Haque, L. Khan, M. Baron, B. Thuraisingham and C. Aggarwal, "Efficient handling of concept drift and concept evolution over stream data," 2016 IEEE 32nd International Conference on Data Engineering (ICDE), Helsinki, Finland, 2016, pp. 481-492, doi: 10.1109/ICDE.2016.7498264.

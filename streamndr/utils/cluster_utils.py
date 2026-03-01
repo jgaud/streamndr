@@ -7,7 +7,14 @@ from sklearn.cluster import KMeans
 from streamndr.utils.data_structure import MicroCluster
 from streamndr.utils.mcikmeans import MCIKMeans
 
-__all__ = ["get_closest_clusters", "qnsc", "generate_microclusters", "check_f_outlier", "get_most_occuring_by_column"]
+__all__ = [
+    "get_closest_clusters",
+    "qnsc",
+    "generate_microclusters",
+    "check_f_outlier",
+    "get_most_occurring_by_column",
+    "get_most_occuring_by_column",
+]
 
 #Constant used to determine the maximum number of rows used by numpy for the computation of the closest clusters. A higher number is faster but takes more memory.
 MAX_MEMORY_SIZE = 50000
@@ -108,6 +115,7 @@ def qnsc(pseudopoints, model, q_p=5):
 def generate_microclusters(X, y, timestamp, K, keep_instances=False, min_samples=0, algorithm="kmeans", random_state=None):
     if K == 0:
         return []
+    y = np.asarray(y)
     
     #Create K clusters
     if algorithm == "kmeans":
@@ -155,7 +163,7 @@ def check_f_outlier(X, models):
 
     return f_outliers
 
-def get_most_occuring_by_column(l):
+def get_most_occurring_by_column(l):
     most_common_values = {}
     for col in zip(*l):
         #Use a Counter to count the occurrences of each value in the column while ignoring -1 since it is a label we want to ignore
@@ -173,3 +181,8 @@ def get_most_occuring_by_column(l):
         most_common_values[len(most_common_values)] = most_common_value
 
     return [most_common_values[i] for i in range(len(most_common_values))]
+
+
+def get_most_occuring_by_column(l):
+    """Backward-compatible alias for get_most_occurring_by_column."""
+    return get_most_occurring_by_column(l)
